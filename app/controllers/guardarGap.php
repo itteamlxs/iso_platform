@@ -20,7 +20,8 @@ $datos = [
     'objetivo' => $_POST['objetivo'] ?? null,
     'prioridad' => $_POST['prioridad'] ?? 'media',
     'responsable' => $_POST['responsable'] ?? null,
-    'fecha_estimada_cierre' => !empty($_POST['fecha_estimada_cierre']) ? $_POST['fecha_estimada_cierre'] : null
+    'fecha_estimada_cierre' => !empty($_POST['fecha_estimada_cierre']) ? $_POST['fecha_estimada_cierre'] : null,
+    'empresa_id' => isset($_SESSION['empresa_id']) ? $_SESSION['empresa_id'] : 1
 ];
 
 // Validar datos obligatorios

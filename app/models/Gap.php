@@ -101,16 +101,40 @@ class Gap {
     
     /**
      * Crear nuevo GAP
+     * Recibe control_id, busca el soa_id correspondiente
      */
     public function crear($datos) {
         try {
+            // Primero, obtener el soa_id del control_id y empresa_id
+            // Asumimos que se pasa empresa_id en los datos o usar sesión
+            $empresa_id = $datos['empresa_id'] ?? 1;
+            
+            $sql_soa = "SELECT id FROM soa_entries 
+                        WHERE control_id = ? AND empresa_id = ? 
+                        LIMIT 1";
+            
+            $stmt_soa = $this->db->prepare($sql_soa);
+            $stmt_soa->execute([
+                $datos['control_id'],
+                $empresa_id
+            ]);
+            
+            $soa_result = $stmt_soa->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$soa_result) {
+                return ['success' => false, 'error' => 'No se encontró el registro SOA para este control'];
+            }
+            
+            $soa_id = $soa_result['id'];
+            
+            // Ahora insertar el GAP con el soa_id correcto
             $sql = "INSERT INTO gap_items 
                     (soa_id, brecha, objetivo, prioridad, avance, fecha_estimada_cierre, responsable) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                $datos['soa_id'],
+                $soa_id,
                 $datos['brecha'],
                 $datos['objetivo'] ?? null,
                 $datos['prioridad'] ?? 'media',
