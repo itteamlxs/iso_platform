@@ -1,0 +1,22 @@
+# Archivos sensibles
+.env
+
+# Composer
+/vendor/
+
+# Logs
+/logs/*.log
+
+# Uploads
+/uploads/*
+!/uploads/.gitkeep
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

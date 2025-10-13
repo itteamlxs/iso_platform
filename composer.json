@@ -1,0 +1,15 @@
+{
+    "name": "neo/iso_platform",
+    "autoload": {
+        "psr-4": {
+            "Neo\\IsoPlatform\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Neo Coder",
+            "email": "leon.jass@outlook.com"
+        }
+    ],
+    "require": {}
+}

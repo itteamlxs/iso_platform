@@ -1,0 +1,207 @@
+📋 RESUMEN COMPLETO DEL PROYECTO
+🏗️ ARQUITECTURA BASE
+
+Stack: PHP nativo + MySQL + Tailwind CSS CDN
+Patrón: MVC modular con includes (sin JSON/Ajax)
+Base de datos: iso_platform con 93 controles ISO 27001:2022
+Empresa: ID fijo = 1 (cambiar a sesión después del login)
+
+
+✅ SPRINTS COMPLETADOS
+FASE 1: FUNDAMENTOS ✅
+Archivos creados:
+
+.env - Variables de entorno
+app/config/database.php - Configuración BD con carga de .env
+app/models/Database.php - Singleton PDO
+app/helpers/utils.php - Funciones globales
+public/.htaccess - Rewrite rules
+public/index.php - Router principal
+public/css/style.css - Estilos custom + animaciones
+public/js/main.js - JavaScript base
+composer.json - Autoload PSR-4
+
+Componentes:
+
+app/views/components/header.php - Header con Tailwind CDN
+app/views/components/sidebar.php - Menú lateral
+app/views/components/footer.php - Footer
+
+FASE 2: DASHBOARD ✅
+Archivos:
+
+app/views/dashboard.php - Vista principal con 6 cards
+app/controllers/DashboardController.php - Lógica del dashboard
+app/views/cards/ - 6 cards con includes directos:
+
+card-metricas.php - Cumplimiento general
+card-dominios.php - Controles por dominio
+card-requerimientos.php - 7 requerimientos base
+card-gaps.php - GAPs alta prioridad (placeholder)
+card-evidencias.php - Últimas evidencias (placeholder)
+card-acciones.php - Acciones pendientes (placeholder)
+
+
+
+SPRINT 3: CONTROLES ✅
+Archivos:
+
+app/models/Control.php - CRUD de controles
+app/controllers/ControlesController.php - Lógica de controles
+app/views/controles/lista-controles.php - Lista con filtros y estadísticas
+app/views/controles/detalle-control.php - Detalle + formulario evaluación
+app/controllers/actualizarControl.php - Procesar formulario
+
+Funcionalidad:
+
+Ver 93 controles con estado SOA
+Filtros (pendiente arreglar)
+Marcar aplicable/no aplicable
+Evaluar: implementado/parcial/no_implementado
+Justificación de no aplicabilidad
+Persistencia en soa_entries
+
+SPRINT 4: SOA ✅
+Archivos:
+
+app/views/soa/declaracion-aplicabilidad.php - Vista SOA completa
+
+Funcionalidad:
+
+Acordeones por dominio con animación CSS
+Botones expandir/colapsar todos
+Resumen ejecutivo con estadísticas
+Barra de progreso
+Tabla completa de los 93 controles
+
+
+🚧 SPRINTS PENDIENTES
+SPRINT 5: GAP ANALYSIS
+Archivos a crear:
+
+app/models/Gap.php - CRUD de brechas
+app/controllers/GapController.php - Lógica GAP
+app/views/gap/analisis-brechas.php - Lista de GAPs
+app/views/gap/crear-gap.php - Formulario nuevo GAP
+app/views/gap/detalle-gap.php - Detalle + acciones
+
+Funcionalidad:
+
+Crear brecha asociada a control
+Prioridad: alta/media/baja
+Asignar responsable + fecha compromiso
+Porcentaje de avance
+Crear acciones correctivas por GAP
+Dashboard de seguimiento
+
+SPRINT 6: EVIDENCIAS
+Archivos a crear:
+
+app/models/Evidencia.php - CRUD evidencias
+app/controllers/EvidenciasController.php - Lógica evidencias
+app/views/evidencias/repositorio-evidencias.php - Biblioteca documentos
+app/views/evidencias/subir-evidencia.php - Upload múltiple
+app/controllers/subirEvidencia.php - Procesar upload
+
+Funcionalidad:
+
+Subir archivos (PDF, DOCX, XLS, IMG)
+Asociar a control(es)
+Tipo de evidencia (de catálogo)
+Estado: pendiente/aprobada/rechazada
+Comentarios de validación
+Buscador y filtros
+
+SPRINT 7: REQUERIMIENTOS BASE
+Archivos a crear:
+
+app/models/Requerimiento.php - CRUD requerimientos
+app/controllers/RequerimientosController.php - Lógica requerimientos
+app/views/requerimientos/checklist-requerimientos.php - Lista 7 items
+app/views/requerimientos/detalle-requerimiento.php - Detalle + evidencias
+
+Funcionalidad:
+
+Checklist de 7 documentos obligatorios
+Estado: pendiente/en_proceso/completado
+Adjuntar evidencias por requerimiento
+Fecha de entrega
+Observaciones
+
+SPRINT 8: REPORTES (Opcional)
+Archivos a crear:
+
+app/views/reportes/dashboard-reportes.php - Panel reportes
+app/controllers/generarPDF.php - Exportar PDF
+Librería: TCPDF o DOMPDF
+
+Funcionalidad:
+
+Gráficos de cumplimiento
+Exportar SOA a PDF
+Reporte de GAPs
+Filtros por fecha
+
+SPRINT 9: AUTENTICACIÓN (Final)
+Archivos a crear:
+
+app/views/login.php - Formulario login
+app/controllers/AuthController.php - Lógica autenticación
+app/middleware/auth.php - Verificar sesión
+Actualizar todas las vistas con verificación de sesión
+
+Funcionalidad:
+
+Login/Logout
+Gestión de usuarios
+Roles: admin/auditor/consultor
+Cambiar empresa_id = 1 por $_SESSION['empresa_id']
+
+
+📊 BASE DE DATOS ACTUAL
+Tablas principales:
+
+empresas - 1 registro (Entropic Networks)
+controles - 93 controles ISO
+controles_dominio - 4 dominios
+soa_entries - 93 registros por empresa
+empresa_requerimientos - 7 por empresa
+gap_items, acciones, evidencias, auditorias, riesgos
+
+
+🔧 PROBLEMAS CONOCIDOS
+
+Filtros en lista-controles.php - No funcionan correctamente
+Cards dashboard - 3 últimas son placeholders (se completarán en Sprint 5-6)
+
+
+📂 ESTRUCTURA DE ARCHIVOS
+
+/opt/lampp/htdocs/iso_platform/
+├── .env
+├── app/
+│   ├── config/database.php
+│   ├── models/
+│   │   ├── Database.php
+│   │   ├── Empresa.php
+│   │   └── Control.php
+│   ├── controllers/
+│   │   ├── DashboardController.php
+│   │   ├── ControlesController.php
+│   │   └── actualizarControl.php
+│   ├── views/
+│   │   ├── components/
+│   │   ├── dashboard.php
+│   │   ├── cards/
+│   │   ├── controles/
+│   │   └── soa/
+│   └── helpers/utils.php
+├── public/
+│   ├── .htaccess
+│   ├── index.php
+│   ├── css/style.css
+│   └── js/main.js
+└── vendor/
+
+
+Para continuar: Ejecutar Sprint 5 (GAP Analysis) completo.
