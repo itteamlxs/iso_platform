@@ -21,7 +21,7 @@ $request = $_SERVER['REQUEST_URI'];
 $request = str_replace('/iso_platform/public', '', $request);
 $request = strtok($request, '?'); // Remover query strings
 
-// Router básico
+// Router básico - ORDEN IMPORTANTÍSIMO: específicas ANTES de genéricas
 switch (true) {
     case ($request === '/' || $request === '' || $request === '/dashboard'):
         require_once '../app/views/dashboard.php';
@@ -29,7 +29,6 @@ switch (true) {
     
     // ==================== API ENDPOINTS ====================
     
-    // API: Dashboard
     case (strpos($request, '/api/dashboard/') === 0):
         $action = str_replace('/api/dashboard/', '', $request);
         $_GET['action'] = $action;
@@ -39,8 +38,9 @@ switch (true) {
     // ==================== MÓDULOS ====================
     
     // Módulo: Controles
-    case ($request === '/controles'):
-        require_once __DIR__ . '/../app/views/controles/lista-controles.php';
+    case (preg_match('/^\/controles\/(\d+)\/actualizar$/', $request, $matches)):
+        $control_id = $matches[1];
+        require_once __DIR__ . '/../app/controllers/actualizarControl.php';
         break;
     
     case (preg_match('/^\/controles\/(\d+)$/', $request, $matches)):
@@ -48,9 +48,8 @@ switch (true) {
         require_once __DIR__ . '/../app/views/controles/detalle-control.php';
         break;
     
-    case (preg_match('/^\/controles\/(\d+)\/actualizar$/', $request, $matches)):
-        $control_id = $matches[1];
-        require_once __DIR__ . '/../app/controllers/actualizarControl.php';
+    case ($request === '/controles'):
+        require_once __DIR__ . '/../app/views/controles/lista-controles.php';
         break;
     
     // Módulo: SOA
@@ -58,17 +57,22 @@ switch (true) {
         require_once __DIR__ . '/../app/views/soa/declaracion-aplicabilidad.php';
         break;
     
-    // Módulo: GAP Analysis
-    case ($request === '/gap'):
-        require_once __DIR__ . '/../app/views/gap/analisis-brechas.php';
+    // Módulo: GAP Analysis - RUTAS ESPECÍFICAS PRIMERO
+    case ($request === '/gap/accion/actualizar-estado'):
+        require_once __DIR__ . '/../app/controllers/cambiarEstadoAccion.php';
         break;
     
-    case ($request === '/gap/crear'):
-        require_once __DIR__ . '/../app/views/gap/crear-gap.php';
+    case ($request === '/gap/accion/guardar'):
+        require_once __DIR__ . '/../app/controllers/guardarAccion.php';
         break;
     
-    case ($request === '/gap/guardar'):
-        require_once __DIR__ . '/../app/controllers/guardarGap.php';
+    case ($request === '/gap/actualizar'):
+        require_once __DIR__ . '/../app/controllers/guardarGapActualizar.php';
+        break;
+    
+    case (preg_match('/^\/gap\/(\d+)\/editar$/', $request, $matches)):
+        $gap_id = $matches[1];
+        require_once __DIR__ . '/../app/views/gap/editar-gap.php';
         break;
     
     case (preg_match('/^\/gap\/(\d+)$/', $request, $matches)):
@@ -76,8 +80,16 @@ switch (true) {
         require_once __DIR__ . '/../app/views/gap/detalle-gap.php';
         break;
     
-    case ($request === '/gap/accion/guardar'):
-        require_once __DIR__ . '/../app/controllers/guardarAccion.php';
+    case ($request === '/gap/guardar'):
+        require_once __DIR__ . '/../app/controllers/guardarGap.php';
+        break;
+    
+    case ($request === '/gap/crear'):
+        require_once __DIR__ . '/../app/views/gap/crear-gap.php';
+        break;
+    
+    case ($request === '/gap'):
+        require_once __DIR__ . '/../app/views/gap/analisis-brechas.php';
         break;
     
     // Módulo: Evidencias

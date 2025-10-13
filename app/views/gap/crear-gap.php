@@ -27,10 +27,10 @@ require_once __DIR__ . '/../components/sidebar.php';
         </nav>
 
         <!-- Formulario -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-4xl">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-5xl">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Identificar Nueva Brecha</h2>
             
-            <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/guardar">
+            <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/guardar" id="form-crear-gap">
                 
                 <!-- Seleccionar control -->
                 <div class="mb-6">
@@ -98,7 +98,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                 </div>
 
                 <!-- Fecha estimada de cierre -->
-                <div class="mb-6">
+                <div class="mb-8">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Fecha Estimada de Cierre
                     </label>
@@ -107,7 +107,41 @@ require_once __DIR__ . '/../components/sidebar.php';
                            min="<?php echo date('Y-m-d'); ?>">
                 </div>
 
-                <!-- Botones -->
+                <!-- Separador -->
+                <div class="border-t pt-8 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones Correctivas</h3>
+                    <p class="text-sm text-gray-600 mb-4">Define las acciones que se ejecutarán para cerrar esta brecha. El avance se calculará automáticamente.</p>
+                </div>
+
+                <!-- Tabla de acciones -->
+                <div class="mb-6 overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border border-gray-200">
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Descripción</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Responsable</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Fecha Compromiso</th>
+                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-700">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="acciones-tbody">
+                            <!-- Se llena dinámicamente con JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Input oculto para acciones en JSON -->
+                <input type="hidden" name="acciones_json" id="acciones_json" value="[]">
+
+                <!-- Botón agregar acción -->
+                <div class="mb-6">
+                    <button type="button" onclick="agregarFila()"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm transition">
+                        <i class="fas fa-plus mr-2"></i>Agregar Acción
+                    </button>
+                </div>
+
+                <!-- Botones principales -->
                 <div class="flex space-x-3 pt-6 border-t">
                     <button type="submit" 
                             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition">
@@ -124,5 +158,81 @@ require_once __DIR__ . '/../components/sidebar.php';
 
     </div>
 </main>
+
+<script>
+let contadorFilas = 0;
+
+function agregarFila() {
+    const tbody = document.getElementById('acciones-tbody');
+    const fila = document.createElement('tr');
+    fila.className = 'border border-gray-200 accion-fila';
+    fila.id = 'fila-' + contadorFilas;
+    fila.innerHTML = `
+        <td class="px-4 py-2">
+            <input type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-sm accion-descripcion" 
+                   placeholder="Descripción de la acción" required>
+        </td>
+        <td class="px-4 py-2">
+            <input type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-sm accion-responsable" 
+                   placeholder="Responsable">
+        </td>
+        <td class="px-4 py-2">
+            <input type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-sm accion-fecha" 
+                   min="${new Date().toISOString().split('T')[0]}" required>
+        </td>
+        <td class="px-4 py-2 text-center">
+            <button type="button" onclick="eliminarFila('fila-${contadorFilas}')"
+                    class="text-red-600 hover:text-red-800 text-sm">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(fila);
+    contadorFilas++;
+}
+
+function eliminarFila(id) {
+    document.getElementById(id).remove();
+}
+
+document.getElementById('form-crear-gap').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Recopilar acciones de las filas
+    const filas = document.querySelectorAll('.accion-fila');
+    const acciones = [];
+    
+    filas.forEach(fila => {
+        const descripcion = fila.querySelector('.accion-descripcion').value;
+        const responsable = fila.querySelector('.accion-responsable').value;
+        const fecha = fila.querySelector('.accion-fecha').value;
+        
+        if (descripcion && fecha) {
+            acciones.push({
+                descripcion: descripcion,
+                responsable: responsable || null,
+                fecha_compromiso: fecha
+            });
+        }
+    });
+    
+    // Validar que hay al menos una acción
+    if (acciones.length === 0) {
+        alert('Debe agregar al menos una acción correctiva');
+        return;
+    }
+    
+    // Guardar acciones en input oculto
+    document.getElementById('acciones_json').value = JSON.stringify(acciones);
+    
+    // Enviar formulario
+    this.submit();
+});
+
+// Agregar una fila vacía al cargar
+window.addEventListener('load', function() {
+    agregarFila();
+});
+</script>
 
 <?php require_once __DIR__ . '/../components/footer.php'; ?>
