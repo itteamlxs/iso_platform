@@ -1,0 +1,339 @@
+# Base de Datos: Sistema de Gestión de Cumplimiento ISO
+
+## Descripción General
+Base de datos diseñada para gestionar el cumplimiento de controles de seguridad de la información según estándares ISO, permitiendo el seguimiento de empresas, controles, evidencias y planes de acción.
+
+---
+
+## **TABLAS PRINCIPALES**
+
+### 1. **empresas**
+Almacena información de las empresas que utilizan el sistema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| nombre | VARCHAR(255) | Nombre de la empresa |
+| ruc | VARCHAR(20) | RUC único |
+| direccion | TEXT | Dirección física |
+| telefono | VARCHAR(20) | Teléfono de contacto |
+| email_contacto | VARCHAR(100) | Email de contacto |
+| sector | VARCHAR(100) | Sector empresarial |
+| fecha_registro | TIMESTAMP | Fecha de registro |
+| estado | ENUM | Estado: activa/inactiva/suspendida |
+
+### 2. **controles_dominio**
+Dominios de controles organizacionales.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| codigo | VARCHAR(10) | Código del dominio |
+| nombre | VARCHAR(255) | Nombre del dominio |
+
+**Datos:**
+- 5: Controles Organizacionales
+- 6: Controles de Personas  
+- 7: Controles Físicos
+- 8: Controles Tecnológicos
+
+### 3. **controles**
+Controles específicos de seguridad organizados por dominio.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| codigo | VARCHAR(20) | Código del control |
+| nombre | VARCHAR(255) | Nombre del control |
+| descripcion | TEXT | Descripción detallada |
+| dominio_id | INT(11) FK | Referencia a controles_dominio |
+
+**Ejemplos de controles:**
+- 5.1: Políticas de seguridad de la información
+- 5.2: Roles y responsabilidades en seguridad
+- 8.1: Dispositivos de usuario final
+- 8.20: Seguridad de las redes
+
+### 4. **soa_entries**
+Relación entre empresas y controles (Statement of Applicability).
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| empresa_id | INT(11) FK | Referencia a empresas |
+| control_id | INT(11) FK | Referencia a controles |
+| aplicable | TINYINT(1) | Si el control es aplicable |
+| justificacion | TEXT | Justificación si no aplica |
+| estado | ENUM | Estado: implementado/parcial/no_implementado |
+| fecha_evaluacion | TIMESTAMP | Fecha de última evaluación |
+| evaluador | VARCHAR(100) | Persona que evaluó |
+
+### 5. **gap_items**
+Registro de brechas identificadas en los controles.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| soa_id | INT(11) FK | Referencia a soa_entries |
+| brecha | TEXT | Descripción de la brecha |
+| objetivo | TEXT | Objetivo a alcanzar |
+| prioridad | ENUM | Prioridad: alta/media/baja |
+| avance | INT(11) | Porcentaje de avance (0-100) |
+| fecha_estimada_cierre | DATE | Fecha estimada de cierre |
+| fecha_real_cierre | DATE | Fecha real de cierre |
+| responsable | VARCHAR(100) | Persona responsable |
+
+### 6. **acciones**
+Plan de acción para cerrar brechas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| gap_id | INT(11) FK | Referencia a gap_items |
+| descripcion | TEXT | Descripción de la acción |
+| responsable | VARCHAR(100) | Persona responsable |
+| fecha_compromiso | DATE | Fecha comprometida |
+| fecha_inicio | DATE | Fecha de inicio real |
+| fecha_finalizacion | DATE | Fecha de finalización |
+| estado | ENUM | Estado: pendiente/en_progreso/completada |
+| notas | TEXT | Notas adicionales |
+
+### 7. **evidencias**
+Evidencias de implementación de controles.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| empresa_id | INT(11) FK | Referencia a empresas |
+| control_id | INT(11) FK | Referencia a controles |
+| descripcion | TEXT | Descripción de la evidencia |
+| tipo_evidencia_id | INT(11) FK | Tipo de evidencia |
+| estado_validacion | ENUM | Estado: pendiente/aprobada/rechazada |
+| comentarios_validacion | TEXT | Comentarios del validador |
+| validado_por | INT(11) FK | Usuario que validó |
+| fecha_validacion | TIMESTAMP | Fecha de validación |
+| archivo | VARCHAR(255) | Ruta del archivo |
+| fecha_subida | TIMESTAMP | Fecha de subida |
+
+### 8. **tipos_evidencia**
+Catálogo de tipos de evidencias.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| nombre | VARCHAR(100) | Nombre del tipo |
+| descripcion | TEXT | Descripción |
+| activo | TINYINT(1) | Si está activo |
+
+**Tipos disponibles:**
+- Política, Procedimiento, Registro, Certificado, Acta, Informe, Captura de pantalla, Manual, Contrato, Otro
+
+### 9. **requerimientos_base**
+Requerimientos base del sistema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| numero | INT(11) | Número de requerimiento |
+| identificador | VARCHAR(50) | Identificador único |
+| descripcion | TEXT | Descripción |
+| objetivo | TEXT | Objetivo del requerimiento |
+| activo | TINYINT(1) | Si está activo |
+
+### 10. **empresa_requerimientos**
+Relación entre empresas y requerimientos.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| empresa_id | INT(11) FK | Referencia a empresas |
+| requerimiento_id | INT(11) FK | Referencia a requerimientos_base |
+| estado | ENUM | Estado: pendiente/en_proceso/completado/no_aplica |
+| evidencia_documento | VARCHAR(255) | Documento de evidencia |
+| fecha_entrega | DATE | Fecha de entrega |
+| observaciones | TEXT | Observaciones |
+
+---
+
+## **TABLAS ADICIONALES**
+
+### 11. **usuarios**
+Usuarios del sistema.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| nombre | VARCHAR(100) | Nombre completo |
+| email | VARCHAR(100) | Email único |
+| contrasena_hash | VARCHAR(255) | Hash de contraseña |
+| rol | ENUM | Rol: admin/auditor/consultor |
+| creado_en | TIMESTAMP | Fecha de creación |
+
+### 12. **auditorias**
+Registro de auditorías realizadas.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| empresa_id | INT(11) FK | Referencia a empresas |
+| fecha | DATE | Fecha de auditoría |
+| auditor | VARCHAR(100) | Nombre del auditor |
+| resumen | TEXT | Resumen de hallazgos |
+| resultado | ENUM | Resultado: conforme/no_conforme/observacion |
+
+### 13. **comentarios_control**
+Comentarios sobre controles específicos.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| soa_id | INT(11) FK | Referencia a soa_entries |
+| usuario_id | INT(11) FK | Referencia a usuarios |
+| comentario | TEXT | Comentario |
+| fecha | TIMESTAMP | Fecha del comentario |
+
+### 14. **historial_estado**
+Historial de cambios de estado en controles.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| control_id | INT(11) FK | Referencia a controles |
+| estado_anterior | ENUM | Estado anterior |
+| nuevo_estado | ENUM | Nuevo estado |
+| fecha | TIMESTAMP | Fecha del cambio |
+| usuario_id | INT(11) FK | Usuario que realizó el cambio |
+
+### 15. **riesgos**
+Registro de riesgos identificados.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| empresa_id | INT(11) FK | Referencia a empresas |
+| descripcion | TEXT | Descripción del riesgo |
+| probabilidad | ENUM | Probabilidad: alta/media/baja |
+| impacto | ENUM | Impacto: alto/medio/bajo |
+| nivel_calculado | VARCHAR(10) | Nivel calculado |
+| control_asociado | INT(11) FK | Control asociado para mitigar |
+
+---
+
+## **VISTAS DEL SISTEMA**
+
+### 1. **view_dashboard_summary**
+Resumen general del sistema:
+- Total de controles
+- Controles implementados vs no implementados
+- Gaps de alta prioridad
+- Acciones pendientes
+
+### 2. **view_dashboard_empresa**
+Resumen por empresa:
+- Total de controles por estado
+- Porcentaje de cumplimiento
+- Controles no aplicables
+
+### 3. **view_controles_dominio_empresa**
+Estadísticas de controles por dominio y empresa:
+- Implementados, parciales, no implementados por dominio
+- Porcentaje de implementación por dominio
+
+### 4. **view_evidencias_empresa**
+Estadísticas de evidencias por empresa:
+- Total de evidencias
+- Aprobadas, pendientes, rechazadas
+
+### 5. **view_gap_avance_empresa**
+Estadísticas de brechas por empresa:
+- Total de gaps por prioridad
+- Promedio de avance
+
+### 6. **view_requerimientos_empresa**
+Estadísticas de requerimientos por empresa:
+- Completados, en proceso, pendientes
+- Porcentaje de completado
+
+---
+
+## **PROCEDIMIENTOS ALMACENADOS**
+
+### 1. **sp_inicializar_soa_empresa**
+Inicializa los 93 controles para una empresa nueva.
+
+**Parámetros:**
+- `p_empresa_id`: ID de la empresa
+
+**Funcionalidad:**
+- Verifica que no existan SOA entries previos
+- Crea 93 registros en soa_entries con estado 'no_implementado'
+
+### 2. **sp_inicializar_requerimientos_empresa**
+Inicializa los requerimientos base para una empresa.
+
+**Parámetros:**
+- `p_empresa_id`: ID de la empresa
+
+**Funcionalidad:**
+- Verifica que no existan requerimientos previos
+- Crea registros en empresa_requerimientos con estado 'pendiente'
+
+---
+
+## **TRIGGERS**
+
+### **trg_after_insert_empresa**
+Se ejecuta automáticamente después de insertar una nueva empresa:
+
+1. **Crea SOA entries:** 93 registros en soa_entries (uno por cada control)
+2. **Crea requerimientos:** Registros en empresa_requerimientos basados en requerimientos_base activos
+
+---
+
+## **RELACIONES PRINCIPALES**
+
+```
+empresas (1) ──── (N) soa_entries (N) ──── (1) controles
+                        │
+                        └─── (N) gap_items (1) ──── (N) acciones
+                        │
+                        └─── (N) evidencias
+                        │
+                        └─── (N) comentarios_control
+
+empresas (1) ──── (N) empresa_requerimientos (N) ──── (1) requerimientos_base
+
+controles (N) ──── (1) controles_dominio
+```
+
+---
+
+## **ÍNDICES CLAVE**
+
+### Índices Únicos:
+- `empresas.ruc` - RUC único por empresa
+- `controles.codigo` - Código único por control
+- `controles_dominio.codigo` - Código único por dominio
+- `usuarios.email` - Email único por usuario
+- `uk_empresa_req` - Combinación única empresa + requerimiento
+
+### Índices de Rendimiento:
+- `idx_empresa_control` - Para búsquedas rápidas en soa_entries
+- `idx_soa` - Para comentarios de control
+- `idx_nombre`, `idx_ruc` - Para búsquedas de empresas
+
+---
+
+## **FLUJO DE TRABAJO TÍPICO**
+
+1. **Registro de Empresa:** Se crea empresa → Trigger crea automáticamente SOA entries y requerimientos
+2. **Evaluación de Controles:** Se evalúa cada control (implementado/parcial/no_implementado)
+3. **Identificación de Brechas:** Para controles no implementados, se crean gap_items
+4. **Plan de Acción:** Se definen acciones específicas para cerrar brechas
+5. **Evidencias:** Se suben evidencias de implementación
+6. **Seguimiento:** Se monitorea avance de gaps y acciones
+7. **Reportes:** Se generan vistas consolidados para dashboard
+
+---
+
+Esta estructura permite un seguimiento completo del cumplimiento de controles de seguridad ISO, desde la evaluación inicial hasta el cierre de brechas, con capacidad de reporteo y auditoría integral.
