@@ -2,6 +2,9 @@
 // Cargar config BD
 require_once __DIR__ . '/../../../app/config/database.php';
 
+// Cargar autoload
+require_once __DIR__ . '/../../../vendor/autoload.php';
+
 // Obtener empresa actual
 require_once __DIR__ . '/../../../app/models/Empresa.php';
 $empresa_model = new \App\Models\Empresa();

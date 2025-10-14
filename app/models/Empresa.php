@@ -3,6 +3,8 @@ namespace App\Models;
 
 use PDO;
 
+require_once __DIR__ . '/Database.php';
+
 /**
  * Empresa Model
  * Gestión de empresas
