@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Models;
+
 
 use PDO;
 
@@ -250,7 +252,6 @@ class Gap {
             $stmt->bindParam(':avance', $datos['avance'], PDO::PARAM_INT);
             $stmt->bindParam(':fecha_estimada_cierre', $datos['fecha_estimada_cierre'], PDO::PARAM_STR);
             $stmt->bindParam(':fecha_real_cierre', $datos['fecha_real_cierre'], PDO::PARAM_STR);
-            $stmt->bindParam(':responsable', $datos['responsable'], PDO::PARAM_STR);
             $stmt->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
             
             $stmt->execute();
@@ -346,5 +347,4 @@ class Gap {
             return [];
         }
     }
-    
 }
