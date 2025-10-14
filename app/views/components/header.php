@@ -1,3 +1,20 @@
+<?php
+// Cargar config BD
+require_once __DIR__ . '/../../../app/config/database.php';
+
+// Obtener empresa actual
+require_once __DIR__ . '/../../../app/models/Empresa.php';
+$empresa_model = new \App\Models\Empresa();
+$empresa_id = isset($_SESSION['empresa_id']) ? $_SESSION['empresa_id'] : 1;
+$empresa = $empresa_model->obtenerPorId($empresa_id);
+$nombre_empresa = $empresa ? htmlspecialchars($empresa['nombre']) : 'Sin empresa';
+
+// Obtener usuario de sesión
+$usuario_nombre = isset($_SESSION['usuario_nombre']) ? htmlspecialchars($_SESSION['usuario_nombre']) : 'Admin User';
+$usuario_rol = isset($_SESSION['usuario_rol']) ? htmlspecialchars($_SESSION['usuario_rol']) : 'Administrador';
+$usuario_iniciales = strtoupper(substr($usuario_nombre, 0, 1) . (strpos($usuario_nombre, ' ') !== false ? substr(explode(' ', $usuario_nombre)[1], 0, 1) : ''));
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -8,6 +25,9 @@
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Views CSS -->
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/css/views.css">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/css/style.css">
@@ -51,12 +71,7 @@
             <!-- Empresa actual -->
             <div class="hidden md:flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg">
                 <i class="fas fa-building text-blue-600"></i>
-                <span class="text-sm font-medium text-gray-700">
-                    <?php 
-                    // TODO: Obtener nombre de empresa de sesión
-                    echo 'Empresa Demo';
-                    ?>
-                </span>
+                <span class="text-sm font-medium text-gray-700"><?php echo $nombre_empresa; ?></span>
             </div>
 
             <!-- Notificaciones -->
@@ -68,11 +83,11 @@
             <!-- Usuario -->
             <div class="flex items-center space-x-3">
                 <div class="hidden md:block text-right">
-                    <p class="text-sm font-medium text-gray-700">Admin User</p>
-                    <p class="text-xs text-gray-500">Administrador</p>
+                    <p class="text-sm font-medium text-gray-700"><?php echo $usuario_nombre; ?></p>
+                    <p class="text-xs text-gray-500"><?php echo ucfirst(str_replace('_', ' ', $usuario_rol)); ?></p>
                 </div>
-                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    AU
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    <?php echo $usuario_iniciales; ?>
                 </div>
             </div>
         </div>
