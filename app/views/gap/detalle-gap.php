@@ -205,6 +205,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                            class="block w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition text-center">
                             <i class="fas fa-edit mr-2"></i>Editar GAP
                         </a>
+                        <button onclick="confirmarEliminar(<?php echo $gap['id']; ?>)"
+                                class="block w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition text-center">
+                            <i class="fas fa-trash mr-2"></i>Eliminar GAP
+                        </button>
                         <a href="<?php echo BASE_URL; ?>/public/gap" 
                            class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition text-center">
                             <i class="fas fa-arrow-left mr-2"></i>Volver a Lista
@@ -260,5 +264,38 @@ require_once __DIR__ . '/../components/sidebar.php';
         </form>
     </div>
 </div>
+
+<!-- Modal: Confirmar Eliminación -->
+<div id="modal-eliminar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
+        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción no se puede deshacer.</p>
+        
+        <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/eliminar">
+            <input type="hidden" name="gap_id" id="modal-gap-id" value="">
+            
+            <div class="flex space-x-3">
+                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
+                    <i class="fas fa-trash mr-2"></i>Eliminar
+                </button>
+                <button type="button" onclick="cerrarModalEliminar()"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmarEliminar(gapId) {
+    document.getElementById('modal-gap-id').value = gapId;
+    document.getElementById('modal-eliminar').classList.remove('hidden');
+}
+
+function cerrarModalEliminar() {
+    document.getElementById('modal-eliminar').classList.add('hidden');
+}
+</script>
 
 <?php require_once __DIR__ . '/../components/footer.php'; ?>

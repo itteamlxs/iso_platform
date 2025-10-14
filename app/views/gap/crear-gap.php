@@ -110,7 +110,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <!-- Separador -->
                 <div class="border-t pt-8 mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones Correctivas</h3>
-                    <p class="text-sm text-gray-600 mb-4">Define las acciones que se ejecutarán para cerrar esta brecha. El avance se calculará automáticamente.</p>
+                    <p class="text-sm text-gray-600 mb-4">Define las acciones que se ejecutarán para cerrar esta brecha.</p>
                 </div>
 
                 <!-- Tabla de acciones -->
@@ -129,9 +129,6 @@ require_once __DIR__ . '/../components/sidebar.php';
                         </tbody>
                     </table>
                 </div>
-
-                <!-- Input oculto para acciones en JSON -->
-                <input type="hidden" name="acciones_json" id="acciones_json" value="[]">
 
                 <!-- Botón agregar acción -->
                 <div class="mb-6">
@@ -167,18 +164,24 @@ function agregarFila() {
     const fila = document.createElement('tr');
     fila.className = 'border border-gray-200 accion-fila';
     fila.id = 'fila-' + contadorFilas;
+    
+    const minDate = new Date().toISOString().split('T')[0];
+    
     fila.innerHTML = `
         <td class="px-4 py-2">
-            <input type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-sm accion-descripcion" 
+            <input type="text" name="accion_descripcion[]" 
+                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm" 
                    placeholder="Descripción de la acción" required>
         </td>
         <td class="px-4 py-2">
-            <input type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-sm accion-responsable" 
+            <input type="text" name="accion_responsable[]"
+                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm" 
                    placeholder="Responsable">
         </td>
         <td class="px-4 py-2">
-            <input type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-sm accion-fecha" 
-                   min="${new Date().toISOString().split('T')[0]}" required>
+            <input type="date" name="accion_fecha[]"
+                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm" 
+                   min="${minDate}" required>
         </td>
         <td class="px-4 py-2 text-center">
             <button type="button" onclick="eliminarFila('fila-${contadorFilas}')"
@@ -196,37 +199,13 @@ function eliminarFila(id) {
 }
 
 document.getElementById('form-crear-gap').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Recopilar acciones de las filas
     const filas = document.querySelectorAll('.accion-fila');
-    const acciones = [];
     
-    filas.forEach(fila => {
-        const descripcion = fila.querySelector('.accion-descripcion').value;
-        const responsable = fila.querySelector('.accion-responsable').value;
-        const fecha = fila.querySelector('.accion-fecha').value;
-        
-        if (descripcion && fecha) {
-            acciones.push({
-                descripcion: descripcion,
-                responsable: responsable || null,
-                fecha_compromiso: fecha
-            });
-        }
-    });
-    
-    // Validar que hay al menos una acción
-    if (acciones.length === 0) {
+    if (filas.length === 0) {
+        e.preventDefault();
         alert('Debe agregar al menos una acción correctiva');
         return;
     }
-    
-    // Guardar acciones en input oculto
-    document.getElementById('acciones_json').value = JSON.stringify(acciones);
-    
-    // Enviar formulario
-    this.submit();
 });
 
 // Agregar una fila vacía al cargar

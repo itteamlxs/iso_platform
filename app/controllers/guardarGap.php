@@ -24,9 +24,23 @@ $datos = [
     'empresa_id' => isset($_SESSION['empresa_id']) ? $_SESSION['empresa_id'] : 1
 ];
 
-// Decodificar acciones JSON
-$acciones_json = $_POST['acciones_json'] ?? '[]';
-$acciones = json_decode($acciones_json, true);
+// Construir acciones desde arrays POST
+$acciones = [];
+$descripciones = $_POST['accion_descripcion'] ?? [];
+$responsables = $_POST['accion_responsable'] ?? [];
+$fechas = $_POST['accion_fecha'] ?? [];
+
+$num_acciones = count($descripciones);
+
+for ($i = 0; $i < $num_acciones; $i++) {
+    if (!empty($descripciones[$i]) && !empty($fechas[$i])) {
+        $acciones[] = [
+            'descripcion' => $descripciones[$i],
+            'responsable' => $responsables[$i] ?? null,
+            'fecha_compromiso' => $fechas[$i]
+        ];
+    }
+}
 
 // Validar datos obligatorios
 if (empty($datos['control_id']) || empty($datos['brecha'])) {
@@ -36,7 +50,7 @@ if (empty($datos['control_id']) || empty($datos['brecha'])) {
     exit;
 }
 
-if (empty($acciones) || count($acciones) === 0) {
+if (count($acciones) === 0) {
     $_SESSION['mensaje'] = 'Debe agregar al menos una acción correctiva';
     $_SESSION['mensaje_tipo'] = 'error';
     header('Location: ' . BASE_URL . '/public/gap/crear');

@@ -58,6 +58,10 @@ switch (true) {
         break;
     
     // Módulo: GAP Analysis - RUTAS ESPECÍFICAS PRIMERO
+    case ($request === '/gap/eliminar'):
+        require_once __DIR__ . '/../app/controllers/eliminarGap.php';
+        break;
+    
     case ($request === '/gap/accion/actualizar-estado'):
         require_once __DIR__ . '/../app/controllers/cambiarEstadoAccion.php';
         break;

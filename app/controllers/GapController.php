@@ -37,6 +37,10 @@ class GapController {
         return $this->model->actualizar($gap_id, $datos);
     }
     
+    public function eliminar($gap_id) {
+        return $this->model->eliminar($gap_id);
+    }
+    
     public function getAcciones($gap_id) {
         return $this->model->getAcciones($gap_id);
     }

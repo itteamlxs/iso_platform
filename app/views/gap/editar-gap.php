@@ -16,11 +16,17 @@ if (!$gap_id) {
 
 $controller = new \App\Controllers\GapController();
 $gap = $controller->detalle($gap_id);
+$acciones = $controller->getAcciones($gap_id);
 
 if (!$gap) {
     header('Location: ' . BASE_URL . '/public/gap');
     exit;
 }
+
+// Calcular avance automático
+$total_acciones = count($acciones);
+$acciones_completadas = count(array_filter($acciones, fn($a) => $a['estado'] === 'completada'));
+$avance_automatico = $total_acciones > 0 ? round(($acciones_completadas / $total_acciones) * 100) : 0;
 
 require_once __DIR__ . '/../components/header.php';
 require_once __DIR__ . '/../components/sidebar.php';
@@ -44,9 +50,10 @@ require_once __DIR__ . '/../components/sidebar.php';
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-4xl">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Editar GAP #<?php echo $gap['id']; ?></h2>
             
-            <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/actualizar">
+            <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/actualizar" id="form-editar-gap">
                 
                 <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
+                <input type="hidden" name="avance_modificado" id="avance_modificado" value="0">
                 
                 <!-- Info del control (solo lectura) -->
                 <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -60,8 +67,8 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($gap['dominio']); ?></p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-600">Estado actual</p>
-                            <p class="text-sm font-medium text-gray-900"><?php echo $gap['avance']; ?>% - <?php echo ($gap['avance'] >= 100 || $gap['fecha_real_cierre']) ? 'CERRADO' : 'PENDIENTE'; ?></p>
+                            <p class="text-xs text-gray-600">Acciones</p>
+                            <p class="text-sm font-medium text-gray-900"><?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> completadas</p>
                         </div>
                     </div>
                 </div>
@@ -116,12 +123,13 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <!-- Avance de implementación -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Avance de Implementación (%) <span class="text-red-600">*</span>
+                            Avance Manual (%) <span class="text-red-600">*</span>
                         </label>
-                        <input type="number" name="avance" min="0" max="100" required
+                        <input type="number" name="avance" id="campo-avance" min="0" max="100" required
                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
-                               value="<?php echo $gap['avance']; ?>">
-                        <p class="text-xs text-gray-500 mt-1">Si llega a 100%, se marca como cerrado</p>
+                               value="<?php echo $gap['avance']; ?>"
+                               data-avance-inicial="<?php echo $gap['avance']; ?>">
+                        <p class="text-xs text-gray-500 mt-1">Automático: <?php echo $avance_automatico; ?>% (<?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?>)</p>
                     </div>
 
                 </div>
@@ -169,5 +177,29 @@ require_once __DIR__ . '/../components/sidebar.php';
 
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const campoAvance = document.getElementById('campo-avance');
+    const flagModificado = document.getElementById('avance_modificado');
+    const avanceInicial = campoAvance.getAttribute('data-avance-inicial');
+    
+    campoAvance.addEventListener('change', function() {
+        if (this.value !== avanceInicial) {
+            flagModificado.value = '1';
+        } else {
+            flagModificado.value = '0';
+        }
+    });
+    
+    document.getElementById('form-editar-gap').addEventListener('submit', function(e) {
+        if (campoAvance.value !== avanceInicial) {
+            flagModificado.value = '1';
+        } else {
+            flagModificado.value = '0';
+        }
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/../components/footer.php'; ?>
