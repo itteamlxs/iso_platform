@@ -41,12 +41,10 @@ class Gap {
                     INNER JOIN controles_dominio cd ON c.dominio_id = cd.id
                     WHERE s.empresa_id = :empresa_id";
             
-            // Filtro por prioridad
             if (!empty($filtros['prioridad'])) {
                 $sql .= " AND g.prioridad = :prioridad";
             }
             
-            // Filtro por estado (según avance)
             if (isset($filtros['estado'])) {
                 if ($filtros['estado'] == 'pendiente') {
                     $sql .= " AND g.avance < 100 AND g.fecha_real_cierre IS NULL";
@@ -165,7 +163,6 @@ class Gap {
             
             $empresa_id = $datos['empresa_id'] ?? 1;
             
-            // Buscar soa_id
             $sql_soa = "SELECT id FROM soa_entries 
                         WHERE control_id = :control_id AND empresa_id = :empresa_id 
                         LIMIT 1";
@@ -184,7 +181,6 @@ class Gap {
             
             $soa_id = $soa_result['id'];
             
-            // Crear GAP con avance en 0
             $sql_gap = "INSERT INTO gap_items 
                         (soa_id, brecha, objetivo, prioridad, avance, fecha_estimada_cierre, responsable) 
                         VALUES (:soa_id, :brecha, :objetivo, :prioridad, :avance, :fecha_estimada_cierre, :responsable)";
@@ -201,20 +197,19 @@ class Gap {
             $stmt_gap->execute();
             $gap_id = $this->db->lastInsertId();
             
-            // Insertar acciones
             $sql_accion = "INSERT INTO acciones 
                            (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado) 
                            VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente')";
             
-            $stmt_accion = $this->db->prepare($sql_accion);
             $fecha_inicio = date('Y-m-d');
             
             foreach ($acciones as $accion) {
-                $stmt_accion->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
-                $stmt_accion->bindParam(':descripcion', $accion['descripcion'], PDO::PARAM_STR);
-                $stmt_accion->bindParam(':responsable', $accion['responsable'] ?? null, PDO::PARAM_STR);
-                $stmt_accion->bindParam(':fecha_compromiso', $accion['fecha_compromiso'], PDO::PARAM_STR);
-                $stmt_accion->bindParam(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
+                $stmt_accion = $this->db->prepare($sql_accion);
+                $stmt_accion->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
+                $stmt_accion->bindValue(':descripcion', $accion['descripcion'], PDO::PARAM_STR);
+                $stmt_accion->bindValue(':responsable', $accion['responsable'] ?? null, PDO::PARAM_STR);
+                $stmt_accion->bindValue(':fecha_compromiso', $accion['fecha_compromiso'], PDO::PARAM_STR);
+                $stmt_accion->bindValue(':fecha_inicio', $fecha_inicio, PDO::PARAM_STR);
                 
                 $stmt_accion->execute();
             }
