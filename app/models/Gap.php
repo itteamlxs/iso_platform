@@ -18,7 +18,7 @@ class Gap {
     }
     
     /**
-     * Obtener todos los GAPs de una empresa (solo activos)
+     * Obtener todos los GAPs de una empresa (solo activos y aplicables)
      */
     public function getAll($empresa_id, $filtros = []) {
         try {
@@ -41,7 +41,7 @@ class Gap {
                     INNER JOIN soa_entries s ON g.soa_id = s.id
                     INNER JOIN controles c ON s.control_id = c.id
                     INNER JOIN controles_dominio cd ON c.dominio_id = cd.id
-                    WHERE s.empresa_id = :empresa_id AND g.estado_gap = 'activo'";
+                    WHERE s.empresa_id = :empresa_id AND g.estado_gap = 'activo' AND s.aplicable = 1";
             
             if (!empty($filtros['prioridad'])) {
                 $sql .= " AND g.prioridad = :prioridad";
@@ -78,7 +78,7 @@ class Gap {
     }
     
     /**
-     * Obtener GAP por ID
+     * Obtener GAP por ID (solo si es aplicable)
      */
     public function getById($gap_id) {
         try {
@@ -91,7 +91,7 @@ class Gap {
                     INNER JOIN soa_entries s ON g.soa_id = s.id
                     INNER JOIN controles c ON s.control_id = c.id
                     INNER JOIN controles_dominio cd ON c.dominio_id = cd.id
-                    WHERE g.id = :gap_id AND g.estado_gap = 'activo'";
+                    WHERE g.id = :gap_id AND g.estado_gap = 'activo' AND s.aplicable = 1";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);

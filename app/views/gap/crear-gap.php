@@ -6,9 +6,10 @@ require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Control.php';
 require_once __DIR__ . '/../../controllers/ControlesController.php';
 
-// Obtener controles para el selector
+// Obtener controles para el selector (solo aplicables)
 $controlesController = new \App\Controllers\ControlesController();
-$controles = $controlesController->listar();
+$filtros = ['aplicable' => 1]; // Solo controles aplicables
+$controles = $controlesController->listar($filtros);
 
 require_once __DIR__ . '/../components/header.php';
 require_once __DIR__ . '/../components/sidebar.php';

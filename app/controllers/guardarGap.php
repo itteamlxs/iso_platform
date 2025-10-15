@@ -50,6 +50,18 @@ if (empty($datos['control_id']) || empty($datos['brecha'])) {
     exit;
 }
 
+// Validar que el control sea aplicable
+require_once __DIR__ . '/../controllers/ControlesController.php';
+$controlesController = new \App\Controllers\ControlesController();
+$control = $controlesController->detalle($datos['control_id']);
+
+if (!$control || $control['aplicable'] == 0) {
+    $_SESSION['mensaje'] = 'No se puede crear GAP en un control no aplicable';
+    $_SESSION['mensaje_tipo'] = 'error';
+    header('Location: ' . BASE_URL . '/public/gap/crear');
+    exit;
+}
+
 if (count($acciones) === 0) {
     $_SESSION['mensaje'] = 'Debe agregar al menos una acción correctiva';
     $_SESSION['mensaje_tipo'] = 'error';

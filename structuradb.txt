@@ -82,6 +82,7 @@ Registro de brechas identificadas en los controles.
 | fecha_estimada_cierre | DATE | Fecha estimada de cierre |
 | fecha_real_cierre | DATE | Fecha real de cierre |
 | responsable | VARCHAR(100) | Persona responsable |
+| estado_gap | VARCHAR(20) DEFAULT 'activo' | Estado del GAP: activo/eliminado (soft delete) |
 
 ### 6. **acciones**
 Plan de acción para cerrar brechas.
@@ -328,11 +329,21 @@ controles (N) ──── (1) controles_dominio
 
 1. **Registro de Empresa:** Se crea empresa → Trigger crea automáticamente SOA entries y requerimientos
 2. **Evaluación de Controles:** Se evalúa cada control (implementado/parcial/no_implementado)
-3. **Identificación de Brechas:** Para controles no implementados, se crean gap_items
+3. **Identificación de Brechas:** Para controles no implementados, se crean gap_items (solo en controles aplicables)
 4. **Plan de Acción:** Se definen acciones específicas para cerrar brechas
 5. **Evidencias:** Se suben evidencias de implementación
 6. **Seguimiento:** Se monitorea avance de gaps y acciones
-7. **Reportes:** Se generan vistas consolidados para dashboard
+7. **Soft Delete:** Los GAPs eliminados cambian estado_gap a 'eliminado' pero permanecen en BD
+8. **Reportes:** Se generan vistas consolidados para dashboard
+
+---
+
+## **CAMBIOS RECIENTES**
+
+### Versión Actual:
+- **gap_items.estado_gap:** Implementado soft delete con columna estado_gap (activo/eliminado)
+- **Filtro de aplicabilidad:** Los GAPs solo pueden crearse en controles con aplicable = 1
+- **Avance híbrido:** El avance puede ser manual o automático basado en acciones completadas
 
 ---
 
