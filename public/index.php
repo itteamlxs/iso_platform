@@ -97,6 +97,22 @@ switch (true) {
         break;
     
     // Módulo: Evidencias
+    case ($request === '/evidencias/eliminar'):
+        require_once __DIR__ . '/../app/controllers/eliminarEvidencia-controller.php';
+        break;
+    
+    case ($request === '/evidencias/validar'):
+        require_once __DIR__ . '/../app/controllers/validarEvidencia-controller.php';
+        break;
+    
+    case ($request === '/evidencias/procesar'):
+        require_once __DIR__ . '/../app/controllers/subirEvidencia-controller.php';
+        break;
+    
+    case ($request === '/evidencias/subir'):
+        require_once __DIR__ . '/../app/views/evidencias/subir-evidencia.php';
+        break;
+    
     case ($request === '/evidencias'):
         require_once '../app/views/evidencias/repositorio-evidencias.php';
         break;

@@ -4,7 +4,9 @@ $page_title = 'Detalle de Control';
 // Cargar dependencias
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Control.php';
+require_once __DIR__ . '/../../models/Evidencia.php';
 require_once __DIR__ . '/../../controllers/ControlesController.php';
+require_once __DIR__ . '/../../controllers/EvidenciasController.php';
 
 // Obtener ID del control desde la URL
 $control_id = isset($control_id) ? $control_id : null;
@@ -21,6 +23,11 @@ if (!$control) {
     header('Location: ' . BASE_URL . '/public/controles');
     exit;
 }
+
+// Obtener cantidad de evidencias del control
+$evidenciasController = new \App\Controllers\EvidenciasController();
+$evidencias = $evidenciasController->listar(['control_id' => $control_id]);
+$total_evidencias = count($evidencias);
 
 require_once __DIR__ . '/../components/header.php';
 require_once __DIR__ . '/../components/sidebar.php';
@@ -179,10 +186,11 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <!-- Evidencias -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-4">Evidencias</h3>
-                    <p class="text-xs text-gray-600 mb-3">0 archivos adjuntos</p>
-                    <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition">
+                    <p class="text-xs text-gray-600 mb-3"><?php echo $total_evidencias; ?> archivo<?php echo $total_evidencias != 1 ? 's' : ''; ?> adjunto<?php echo $total_evidencias != 1 ? 's' : ''; ?></p>
+                    <a href="<?php echo BASE_URL; ?>/public/evidencias/subir?control_id=<?php echo $control['id']; ?>"
+                       class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition text-center">
                         <i class="fas fa-upload mr-2"></i>Subir Evidencia
-                    </button>
+                    </a>
                 </div>
 
             </div>

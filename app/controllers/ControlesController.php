@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Models\Database;
 use App\Models\Control;
 
+require_once __DIR__ . '/../models/Control.php';
 /**
  * Controles Controller
  * Maneja la lógica de los controles ISO 27001
