@@ -91,19 +91,24 @@ class Requerimiento {
                         c.nombre,
                         c.descripcion,
                         cd.nombre as dominio,
-                        s.aplicable,
-                        s.estado,
-                        (SELECT COUNT(*) FROM evidencias e WHERE e.control_id = c.id AND e.empresa_id = :empresa_id) as total_evidencias
+                        COALESCE(s.aplicable, 1) as aplicable,
+                        COALESCE(s.estado, 'no_implementado') as estado,
+                        (SELECT COUNT(*) 
+                         FROM evidencias e 
+                         WHERE e.control_id = c.id 
+                         AND e.empresa_id = :empresa_id_ev
+                         AND e.estado_validacion = 'aprobada') as total_evidencias
                     FROM requerimientos_controles rc
                     INNER JOIN controles c ON rc.control_id = c.id
                     INNER JOIN controles_dominio cd ON c.dominio_id = cd.id
-                    LEFT JOIN soa_entries s ON c.id = s.control_id AND s.empresa_id = :empresa_id
+                    LEFT JOIN soa_entries s ON c.id = s.control_id AND s.empresa_id = :empresa_id_soa
                     WHERE rc.requerimiento_base_id = :req_id
                     ORDER BY c.codigo ASC";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':req_id', $requerimiento_base_id, PDO::PARAM_INT);
-            $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+            $stmt->bindValue(':empresa_id_soa', $empresa_id, PDO::PARAM_INT);
+            $stmt->bindValue(':empresa_id_ev', $empresa_id, PDO::PARAM_INT);
             $stmt->execute();
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -155,7 +160,6 @@ class Requerimiento {
         try {
             $this->db->beginTransaction();
             
-            // Obtener controles asociados
             $sql = "SELECT c.id 
                     FROM requerimientos_controles rc
                     INNER JOIN controles c ON rc.control_id = c.id
@@ -176,7 +180,6 @@ class Requerimiento {
                 return ['success' => false, 'error' => 'No hay controles aplicables asociados'];
             }
             
-            // Actualizar estado de controles a implementado
             $sql_update = "UPDATE soa_entries 
                           SET estado = 'implementado', 
                               fecha_evaluacion = NOW(),
@@ -211,7 +214,6 @@ class Requerimiento {
     
     /**
      * Verificar si todos los controles asociados están implementados con evidencias
-     * (Lógica automática: Controles → Requerimiento)
      */
     public function verificarCompletitudAutomatica($requerimiento_base_id, $empresa_id) {
         try {
@@ -220,23 +222,23 @@ class Requerimiento {
                         SUM(CASE WHEN s.estado = 'implementado' THEN 1 ELSE 0 END) as implementados,
                         SUM(CASE WHEN (SELECT COUNT(*) FROM evidencias e 
                                        WHERE e.control_id = c.id 
-                                       AND e.empresa_id = :empresa_id 
+                                       AND e.empresa_id = :empresa_id_ev
                                        AND e.estado_validacion = 'aprobada') > 0 THEN 1 ELSE 0 END) as con_evidencias
                     FROM requerimientos_controles rc
                     INNER JOIN controles c ON rc.control_id = c.id
                     INNER JOIN soa_entries s ON c.id = s.control_id
                     WHERE rc.requerimiento_base_id = :req_id 
-                    AND s.empresa_id = :empresa_id
+                    AND s.empresa_id = :empresa_id_soa
                     AND s.aplicable = 1";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':req_id', $requerimiento_base_id, PDO::PARAM_INT);
-            $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+            $stmt->bindValue(':empresa_id_soa', $empresa_id, PDO::PARAM_INT);
+            $stmt->bindValue(':empresa_id_ev', $empresa_id, PDO::PARAM_INT);
             $stmt->execute();
             
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Si todos los controles aplicables están implementados Y tienen evidencias
             if ($result['total_controles'] > 0 && 
                 $result['implementados'] == $result['total_controles'] &&
                 $result['con_evidencias'] == $result['total_controles']) {

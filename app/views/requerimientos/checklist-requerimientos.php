@@ -88,9 +88,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                         'no_aplica' => 'fa-ban text-gray-600'
                     ];
                     
-                    // Obtener controles asociados
-                    $controles = $controller->getControlesAsociados($req['requerimiento_base_id']);
-                    $evidencias = $controller->getEvidenciasDeControles($req['requerimiento_base_id']);
+                    // CORRECCIÓN: Usar requerimiento_base_id correcto
+                    $req_base_id = isset($req['requerimiento_base_id']) ? $req['requerimiento_base_id'] : $req['requerimiento_id'];
+                    $controles = $controller->getControlesAsociados($req_base_id);
+                    $evidencias = $controller->getEvidenciasDeControles($req_base_id);
                 ?>
                 
                 <div class="bg-white rounded-xl shadow-sm border-l-4 <?php echo $estado_color[$req['estado']]; ?> p-6">
@@ -121,67 +122,67 @@ require_once __DIR__ . '/../components/sidebar.php';
                             </div>
                             <?php endif; ?>
                             
-                            <!-- NUEVA SECCIÓN: Controles asociados -->
+                            <!-- Controles asociados -->
                             <div class="mt-4 border-t pt-4">
                                 <div class="flex items-center justify-between mb-3">
                                     <h4 class="text-sm font-semibold text-gray-700">
                                         <i class="fas fa-link mr-2"></i>Controles Asociados (<?php echo count($controles); ?>)
                                     </h4>
+                                    <?php if (count($controles) > 0): ?>
                                     <button onclick="toggleControles('controles-<?php echo $req['id']; ?>')" 
                                             class="text-xs text-blue-600 hover:text-blue-800">
                                         <i class="fas fa-chevron-down" id="icon-controles-<?php echo $req['id']; ?>"></i>
                                         Ver/Ocultar
                                     </button>
-                                </div>
-                                
-                                <div id="controles-<?php echo $req['id']; ?>" class="hidden">
-                                    <?php if (count($controles) > 0): ?>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
-                                            <?php foreach ($controles as $control): 
-                                                $control_badge = [
-                                                    'implementado' => 'bg-green-100 text-green-800',
-                                                    'parcial' => 'bg-yellow-100 text-yellow-800',
-                                                    'no_implementado' => 'bg-red-100 text-red-800'
-                                                ];
-                                            ?>
-                                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
-                                                <div class="flex-1">
-                                                    <span class="text-xs font-medium text-gray-900"><?php echo $control['codigo']; ?></span>
-                                                    <p class="text-xs text-gray-600"><?php echo htmlspecialchars(substr($control['nombre'], 0, 40)); ?>...</p>
-                                                </div>
-                                                <div class="flex items-center space-x-2">
-                                                    <?php if ($control['total_evidencias'] > 0): ?>
-                                                        <span class="text-xs text-green-600" title="Evidencias">
-                                                            <i class="fas fa-paperclip"></i> <?php echo $control['total_evidencias']; ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                    <span class="text-xs px-2 py-1 rounded <?php echo $control_badge[$control['estado']] ?? 'bg-gray-100 text-gray-800'; ?>">
-                                                        <?php echo ucfirst($control['estado']); ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        
-                                        <!-- Botón: Aplicar a controles -->
-                                        <?php if ($req['estado'] === 'completado'): ?>
-                                        <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/aplicar-controles" style="display: inline;">
-                                            <input type="hidden" name="requerimiento_base_id" value="<?php echo $req['requerimiento_base_id']; ?>">
-                                            <button type="submit" 
-                                                    onclick="return confirm('¿Marcar todos los controles asociados como IMPLEMENTADOS?')"
-                                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                                                <i class="fas fa-check-double mr-2"></i>Aplicar Requerimiento a Controles
-                                            </button>
-                                        </form>
-                                        <?php endif; ?>
-                                        
-                                    <?php else: ?>
-                                        <p class="text-xs text-gray-500 italic">No hay controles asociados</p>
                                     <?php endif; ?>
                                 </div>
+                                
+                                <?php if (count($controles) > 0): ?>
+                                <div id="controles-<?php echo $req['id']; ?>" class="hidden">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                        <?php foreach ($controles as $control): 
+                                            $control_badge = [
+                                                'implementado' => 'bg-green-100 text-green-800',
+                                                'parcial' => 'bg-yellow-100 text-yellow-800',
+                                                'no_implementado' => 'bg-red-100 text-red-800'
+                                            ];
+                                        ?>
+                                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                                            <div class="flex-1">
+                                                <span class="text-xs font-medium text-gray-900"><?php echo $control['codigo']; ?></span>
+                                                <p class="text-xs text-gray-600"><?php echo htmlspecialchars(substr($control['nombre'], 0, 40)); ?>...</p>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <?php if ($control['total_evidencias'] > 0): ?>
+                                                    <span class="text-xs text-green-600" title="Evidencias">
+                                                        <i class="fas fa-paperclip"></i> <?php echo $control['total_evidencias']; ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <span class="text-xs px-2 py-1 rounded <?php echo $control_badge[$control['estado']] ?? 'bg-gray-100 text-gray-800'; ?>">
+                                                    <?php echo ucfirst($control['estado']); ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    
+                                    <?php if ($req['estado'] === 'completado'): ?>
+                                    <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/aplicar-controles" style="display: inline;">
+                                        <input type="hidden" name="requerimiento_base_id" value="<?php echo $req_base_id; ?>">
+                                        <button type="submit" 
+                                                onclick="return confirm('¿Marcar todos los controles asociados como IMPLEMENTADOS?')"
+                                                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
+                                            <i class="fas fa-check-double mr-2"></i>Aplicar Requerimiento a Controles
+                                        </button>
+                                    </form>
+                                    <?php endif; ?>
+                                </div>
+                                <?php else: ?>
+                                    <p class="text-xs text-gray-500 italic">No hay controles asociados</p>
+                                <?php endif; ?>
                             </div>
                             
-                            <!-- NUEVA SECCIÓN: Evidencias asociadas -->
+                            <!-- Evidencias asociadas -->
                             <?php if (count($evidencias) > 0): ?>
                             <div class="mt-4 border-t pt-4">
                                 <div class="flex items-center justify-between mb-3">
@@ -241,7 +242,6 @@ require_once __DIR__ . '/../components/sidebar.php';
                             </div>
                         </div>
                         
-                        <!-- Botón de acción -->
                         <button onclick="abrirModalEditar(<?php echo $req['id']; ?>)"
                                 class="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-sm">
                             <i class="fas fa-edit mr-2"></i>Actualizar
@@ -270,7 +270,6 @@ require_once __DIR__ . '/../components/sidebar.php';
         <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/actualizar" id="form-actualizar">
             <input type="hidden" name="requerimiento_id" id="modal-requerimiento-id" value="">
             
-            <!-- Estado -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Estado <span class="text-red-600">*</span>
@@ -284,7 +283,6 @@ require_once __DIR__ . '/../components/sidebar.php';
                 </select>
             </div>
 
-            <!-- Evidencia -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Evidencia/Documento
@@ -294,7 +292,6 @@ require_once __DIR__ . '/../components/sidebar.php';
                        placeholder="Nombre del documento o evidencia">
             </div>
 
-            <!-- Fecha de entrega -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Fecha de Entrega
@@ -303,7 +300,6 @@ require_once __DIR__ . '/../components/sidebar.php';
                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
             </div>
 
-            <!-- Observaciones -->
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Observaciones
@@ -313,7 +309,6 @@ require_once __DIR__ . '/../components/sidebar.php';
                           placeholder="Comentarios u observaciones adicionales..."></textarea>
             </div>
 
-            <!-- Botones -->
             <div class="flex space-x-3">
                 <button type="submit" 
                         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">

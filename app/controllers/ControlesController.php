@@ -48,6 +48,13 @@ class ControlesController {
     }
     
     /**
+     * Obtener requerimientos asociados a un control
+     */
+    public function getRequerimientosAsociados($control_id) {
+        return $this->model->getRequerimientosAsociados($control_id);
+    }
+    
+    /**
      * Obtener estadísticas de controles
      */
     public function getEstadisticas() {
@@ -81,5 +88,4 @@ class ControlesController {
         
         return $stats;
     }
-    
 }

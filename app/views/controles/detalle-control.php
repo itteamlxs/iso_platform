@@ -30,8 +30,7 @@ $evidencias = $evidenciasController->listar(['control_id' => $control_id]);
 $total_evidencias = count($evidencias);
 
 // Obtener requerimientos asociados
-$controlModel = new \App\Models\Control();
-$requerimientos = $controlModel->getRequerimientosAsociados($control_id);
+$requerimientos = $controller->getRequerimientosAsociados($control_id);
 
 require_once __DIR__ . '/../components/header.php';
 require_once __DIR__ . '/../components/sidebar.php';
@@ -66,7 +65,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                 </div>
             </div>
             
-            <!-- NUEVA SECCIÓN: Requerimientos que respaldan este control -->
+            <!-- Requerimientos que respaldan este control -->
             <?php if (count($requerimientos) > 0): ?>
             <div class="mt-6 pt-6 border-t border-gray-200">
                 <div class="flex items-center justify-between mb-4">
@@ -148,7 +147,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                             </div>
                         </div>
 
-                        <!-- Estado de implementación (solo si es aplicable) -->
+                        <!-- Estado de implementación -->
                         <div id="div-estado" class="mb-6" <?php echo !$control['aplicable'] ? 'style="display:none;"' : ''; ?>>
                             <label class="block text-sm font-medium text-gray-700 mb-3">Estado de Implementación</label>
                             <div class="space-y-2">
@@ -182,7 +181,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                             </div>
                         </div>
 
-                        <!-- Justificación (solo si NO es aplicable) -->
+                        <!-- Justificación -->
                         <div id="div-justificacion" class="mb-6" <?php echo $control['aplicable'] ? 'style="display:none;"' : ''; ?>>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Justificación de No Aplicabilidad</label>
                             <textarea name="justificacion" rows="4" 
@@ -264,7 +263,6 @@ document.querySelectorAll('input[name="aplicable"]').forEach(radio => {
         document.getElementById('div-estado').style.display = esAplicable ? 'block' : 'none';
         document.getElementById('div-justificacion').style.display = esAplicable ? 'none' : 'block';
         
-        // Requerir estado solo si es aplicable
         document.querySelectorAll('input[name="estado"]').forEach(r => {
             r.required = esAplicable;
         });

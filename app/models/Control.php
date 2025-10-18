@@ -39,19 +39,16 @@ class Control {
             
             $params = [$empresa_id, $empresa_id];
             
-            // Filtro por dominio
             if (!empty($filtros['dominio'])) {
                 $sql .= " AND c.dominio_id = ?";
                 $params[] = $filtros['dominio'];
             }
             
-            // Filtro por estado - SOLO si tiene valor real
             if (isset($filtros['estado']) && $filtros['estado'] !== '' && $filtros['estado'] !== null) {
                 $sql .= " AND COALESCE(s.estado, 'no_implementado') = ?";
                 $params[] = $filtros['estado'];
             }
             
-            // Filtro por aplicabilidad - SOLO si tiene valor real
             if (isset($filtros['aplicable']) && $filtros['aplicable'] !== '' && $filtros['aplicable'] !== null) {
                 $sql .= " AND COALESCE(s.aplicable, 1) = ?";
                 $params[] = $filtros['aplicable'];
@@ -167,5 +164,4 @@ class Control {
             return [];
         }
     }
-    
 }

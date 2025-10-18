@@ -24,7 +24,16 @@ class RequerimientosController {
      * Obtener lista de requerimientos
      */
     public function listar() {
-        return $this->model->getAll($this->empresa_id);
+        $requerimientos = $this->model->getAll($this->empresa_id);
+        
+        // Debug: verificar estructura
+        foreach ($requerimientos as &$req) {
+            if (!isset($req['requerimiento_base_id']) && isset($req['requerimiento_id'])) {
+                $req['requerimiento_base_id'] = $req['requerimiento_id'];
+            }
+        }
+        
+        return $requerimientos;
     }
     
     /**
@@ -38,7 +47,13 @@ class RequerimientosController {
      * Obtener controles asociados a un requerimiento
      */
     public function getControlesAsociados($requerimiento_base_id) {
-        return $this->model->getControlesAsociados($requerimiento_base_id, $this->empresa_id);
+        error_log("RequerimientosController::getControlesAsociados - requerimiento_base_id: $requerimiento_base_id, empresa_id: {$this->empresa_id}");
+        
+        $controles = $this->model->getControlesAsociados($requerimiento_base_id, $this->empresa_id);
+        
+        error_log("RequerimientosController::getControlesAsociados - Controles encontrados: " . count($controles));
+        
+        return $controles;
     }
     
     /**
