@@ -6,6 +6,7 @@ use PDO;
 /**
  * Control Model
  * Gestión de controles ISO 27001
+ * VERSIÓN 2.0 - Con relación bidireccional a requerimientos
  */
 class Control {
     
@@ -95,6 +96,33 @@ class Control {
             
         } catch (\Exception $e) {
             return null;
+        }
+    }
+    
+    /**
+     * Obtener requerimientos base que respaldan este control
+     */
+    public function getRequerimientosAsociados($control_id) {
+        try {
+            $sql = "SELECT 
+                        rb.id,
+                        rb.numero,
+                        rb.identificador,
+                        rb.descripcion
+                    FROM requerimientos_controles rc
+                    INNER JOIN requerimientos_base rb ON rc.requerimiento_base_id = rb.id
+                    WHERE rc.control_id = :control_id
+                    ORDER BY rb.numero ASC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':control_id', $control_id, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (\Exception $e) {
+            error_log('Error en Control::getRequerimientosAsociados: ' . $e->getMessage());
+            return [];
         }
     }
     

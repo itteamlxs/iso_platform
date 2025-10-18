@@ -24,10 +24,14 @@ if (!$control) {
     exit;
 }
 
-// Obtener cantidad de evidencias del control
+// Obtener evidencias del control
 $evidenciasController = new \App\Controllers\EvidenciasController();
 $evidencias = $evidenciasController->listar(['control_id' => $control_id]);
 $total_evidencias = count($evidencias);
+
+// Obtener requerimientos asociados
+$controlModel = new \App\Models\Control();
+$requerimientos = $controlModel->getRequerimientosAsociados($control_id);
 
 require_once __DIR__ . '/../components/header.php';
 require_once __DIR__ . '/../components/sidebar.php';
@@ -61,6 +65,57 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <p class="text-gray-600 mt-2"><?php echo htmlspecialchars($control['descripcion']); ?></p>
                 </div>
             </div>
+            
+            <!-- NUEVA SECCIÓN: Requerimientos que respaldan este control -->
+            <?php if (count($requerimientos) > 0): ?>
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-700">
+                        <i class="fas fa-link mr-2 text-blue-600"></i>
+                        Respaldado por Requerimientos Base (<?php echo count($requerimientos); ?>)
+                    </h3>
+                    <button onclick="toggleSection('requerimientos-section')" 
+                            class="text-xs text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-chevron-down" id="icon-requerimientos-section"></i>
+                        Ver/Ocultar
+                    </button>
+                </div>
+                
+                <div id="requerimientos-section" class="space-y-2">
+                    <?php foreach ($requerimientos as $req): ?>
+                    <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <span class="text-xs px-2 py-1 bg-blue-600 text-white rounded font-semibold">
+                                    REQ-<?php echo str_pad($req['numero'], 2, '0', STR_PAD_LEFT); ?>
+                                </span>
+                                <span class="text-sm font-medium text-gray-900">
+                                    <?php echo htmlspecialchars($req['identificador']); ?>
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-600 ml-14">
+                                <?php echo htmlspecialchars(substr($req['descripcion'], 0, 100)); ?>...
+                            </p>
+                        </div>
+                        <a href="<?php echo BASE_URL; ?>/public/requerimientos" 
+                           class="ml-4 text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <?php endforeach; ?>
+                    
+                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-info-circle text-yellow-600 mt-1"></i>
+                            <div class="text-xs text-yellow-800">
+                                <p class="font-semibold mb-1">Nota importante:</p>
+                                <p>Este control está relacionado con los requerimientos base listados. Si completa alguno de esos requerimientos y lo aplica, este control puede ser marcado automáticamente como implementado.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -72,6 +127,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                     
                     <form id="form-evaluacion" method="POST" action="<?php echo BASE_URL; ?>/public/controles/<?php echo $control['id']; ?>/actualizar">
                         <input type="hidden" name="soa_id" value="<?php echo $control['soa_id']; ?>">
+                        <input type="hidden" name="control_id" value="<?php echo $control['id']; ?>">
                         
                         <!-- Aplicabilidad -->
                         <div class="mb-6">
@@ -214,6 +270,15 @@ document.querySelectorAll('input[name="aplicable"]').forEach(radio => {
         });
     });
 });
+
+// Toggle section
+function toggleSection(id) {
+    const element = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    element.classList.toggle('hidden');
+    icon.classList.toggle('fa-chevron-down');
+    icon.classList.toggle('fa-chevron-up');
+}
 </script>
 
 <?php require_once __DIR__ . '/../components/footer.php'; ?>

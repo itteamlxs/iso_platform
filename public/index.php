@@ -124,6 +124,10 @@ switch (true) {
         break;
     
     // Módulo: Requerimientos
+    case ($request === '/requerimientos/aplicar-controles'):
+        require_once __DIR__ . '/../app/controllers/aplicarRequerimientoAControles.php';
+        break;
+    
     case ($request === '/requerimientos/actualizar'):
         require_once __DIR__ . '/../app/controllers/actualizarRequerimiento.php';
         break;

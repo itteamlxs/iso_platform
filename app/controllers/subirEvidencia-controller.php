@@ -1,6 +1,7 @@
 <?php
 /**
  * Procesar upload de evidencia
+ * VERSIÓN 2.0 - Con verificación automática de requerimientos
  */
 
 require_once __DIR__ . '/../models/Database.php';
@@ -100,6 +101,12 @@ $result = $controller->crear($datos);
 if ($result['success']) {
     $_SESSION['mensaje'] = 'Evidencia subida correctamente';
     $_SESSION['mensaje_tipo'] = 'success';
+    
+    // TRIGGER: Verificar completitud automática de requerimientos
+    require_once __DIR__ . '/verificarCompletitudRequerimiento.php';
+    $empresa_id = isset($_SESSION['empresa_id']) ? $_SESSION['empresa_id'] : 1;
+    verificarCompletitudRequerimientos($empresa_id);
+    
     header('Location: ' . BASE_URL . '/public/evidencias');
 } else {
     // Si falla BD, eliminar archivo

@@ -87,6 +87,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                         'completado' => 'fa-check-circle text-green-600',
                         'no_aplica' => 'fa-ban text-gray-600'
                     ];
+                    
+                    // Obtener controles asociados
+                    $controles = $controller->getControlesAsociados($req['requerimiento_base_id']);
+                    $evidencias = $controller->getEvidenciasDeControles($req['requerimiento_base_id']);
                 ?>
                 
                 <div class="bg-white rounded-xl shadow-sm border-l-4 <?php echo $estado_color[$req['estado']]; ?> p-6">
@@ -111,14 +115,111 @@ require_once __DIR__ . '/../components/sidebar.php';
                             </p>
                             
                             <?php if ($req['objetivo']): ?>
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                                 <p class="text-xs font-semibold text-blue-800 mb-1">Objetivo:</p>
                                 <p class="text-sm text-blue-900"><?php echo htmlspecialchars($req['objetivo']); ?></p>
                             </div>
                             <?php endif; ?>
                             
+                            <!-- NUEVA SECCIÓN: Controles asociados -->
+                            <div class="mt-4 border-t pt-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-semibold text-gray-700">
+                                        <i class="fas fa-link mr-2"></i>Controles Asociados (<?php echo count($controles); ?>)
+                                    </h4>
+                                    <button onclick="toggleControles('controles-<?php echo $req['id']; ?>')" 
+                                            class="text-xs text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-chevron-down" id="icon-controles-<?php echo $req['id']; ?>"></i>
+                                        Ver/Ocultar
+                                    </button>
+                                </div>
+                                
+                                <div id="controles-<?php echo $req['id']; ?>" class="hidden">
+                                    <?php if (count($controles) > 0): ?>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                            <?php foreach ($controles as $control): 
+                                                $control_badge = [
+                                                    'implementado' => 'bg-green-100 text-green-800',
+                                                    'parcial' => 'bg-yellow-100 text-yellow-800',
+                                                    'no_implementado' => 'bg-red-100 text-red-800'
+                                                ];
+                                            ?>
+                                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                                                <div class="flex-1">
+                                                    <span class="text-xs font-medium text-gray-900"><?php echo $control['codigo']; ?></span>
+                                                    <p class="text-xs text-gray-600"><?php echo htmlspecialchars(substr($control['nombre'], 0, 40)); ?>...</p>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <?php if ($control['total_evidencias'] > 0): ?>
+                                                        <span class="text-xs text-green-600" title="Evidencias">
+                                                            <i class="fas fa-paperclip"></i> <?php echo $control['total_evidencias']; ?>
+                                                        </span>
+                                                    <?php endif; ?>
+                                                    <span class="text-xs px-2 py-1 rounded <?php echo $control_badge[$control['estado']] ?? 'bg-gray-100 text-gray-800'; ?>">
+                                                        <?php echo ucfirst($control['estado']); ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        
+                                        <!-- Botón: Aplicar a controles -->
+                                        <?php if ($req['estado'] === 'completado'): ?>
+                                        <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/aplicar-controles" style="display: inline;">
+                                            <input type="hidden" name="requerimiento_base_id" value="<?php echo $req['requerimiento_base_id']; ?>">
+                                            <button type="submit" 
+                                                    onclick="return confirm('¿Marcar todos los controles asociados como IMPLEMENTADOS?')"
+                                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
+                                                <i class="fas fa-check-double mr-2"></i>Aplicar Requerimiento a Controles
+                                            </button>
+                                        </form>
+                                        <?php endif; ?>
+                                        
+                                    <?php else: ?>
+                                        <p class="text-xs text-gray-500 italic">No hay controles asociados</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <!-- NUEVA SECCIÓN: Evidencias asociadas -->
+                            <?php if (count($evidencias) > 0): ?>
+                            <div class="mt-4 border-t pt-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-semibold text-gray-700">
+                                        <i class="fas fa-folder-open mr-2"></i>Evidencias Aprobadas (<?php echo count($evidencias); ?>)
+                                    </h4>
+                                    <button onclick="toggleControles('evidencias-<?php echo $req['id']; ?>')" 
+                                            class="text-xs text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-chevron-down" id="icon-evidencias-<?php echo $req['id']; ?>"></i>
+                                        Ver/Ocultar
+                                    </button>
+                                </div>
+                                
+                                <div id="evidencias-<?php echo $req['id']; ?>" class="hidden">
+                                    <div class="space-y-2">
+                                        <?php foreach (array_slice($evidencias, 0, 5) as $evidencia): ?>
+                                        <div class="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                                            <div class="flex-1">
+                                                <span class="text-xs font-medium text-gray-900"><?php echo $evidencia['codigo']; ?></span>
+                                                <p class="text-xs text-gray-600"><?php echo htmlspecialchars(substr($evidencia['descripcion'], 0, 50)); ?>...</p>
+                                            </div>
+                                            <a href="<?php echo BASE_URL; ?>/public/descargar-evidencia.php?file=<?php echo urlencode($evidencia['archivo']); ?>" 
+                                               target="_blank"
+                                               class="text-xs text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                        <?php endforeach; ?>
+                                        <?php if (count($evidencias) > 5): ?>
+                                        <p class="text-xs text-gray-500 text-center">... y <?php echo count($evidencias) - 5; ?> más</p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
                             <!-- Información adicional -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mt-4 pt-4 border-t">
                                 <div>
                                     <p class="text-gray-600">Evidencia</p>
                                     <p class="font-medium text-gray-900">
@@ -235,6 +336,14 @@ function abrirModalEditar(requerimientoId) {
 
 function cerrarModalEditar() {
     document.getElementById('modal-editar').classList.add('hidden');
+}
+
+function toggleControles(id) {
+    const element = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    element.classList.toggle('hidden');
+    icon.classList.toggle('fa-chevron-down');
+    icon.classList.toggle('fa-chevron-up');
 }
 </script>
 

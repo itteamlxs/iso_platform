@@ -8,6 +8,7 @@ require_once __DIR__ . '/../models/Requerimiento.php';
 /**
  * Requerimientos Controller
  * Maneja la lógica de requerimientos base ISO 27001
+ * VERSIÓN 2.0 - Con gestión de relaciones bidireccionales
  */
 class RequerimientosController {
     
@@ -31,6 +32,34 @@ class RequerimientosController {
      */
     public function detalle($requerimiento_id) {
         return $this->model->getById($requerimiento_id);
+    }
+    
+    /**
+     * Obtener controles asociados a un requerimiento
+     */
+    public function getControlesAsociados($requerimiento_base_id) {
+        return $this->model->getControlesAsociados($requerimiento_base_id, $this->empresa_id);
+    }
+    
+    /**
+     * Obtener evidencias de controles asociados
+     */
+    public function getEvidenciasDeControles($requerimiento_base_id) {
+        return $this->model->getEvidenciasDeControles($requerimiento_base_id, $this->empresa_id);
+    }
+    
+    /**
+     * Aplicar requerimiento a controles (marcar como implementado)
+     */
+    public function aplicarAControles($requerimiento_base_id) {
+        return $this->model->aplicarAControles($requerimiento_base_id, $this->empresa_id);
+    }
+    
+    /**
+     * Verificar si debe marcarse como completado automáticamente
+     */
+    public function verificarCompletitudAutomatica($requerimiento_base_id) {
+        return $this->model->verificarCompletitudAutomatica($requerimiento_base_id, $this->empresa_id);
     }
     
     /**
