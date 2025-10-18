@@ -82,6 +82,21 @@ require_once __DIR__ . '/components/sidebar.php';
                     <?php include __DIR__ . '/cards/card-acciones.php'; ?>
                 </div>
             </div>
+            
+
+            <!-- Card: Mapa de Calor -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover lg:col-span-3">
+                <div class="p-6 border-b border-gray-100">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-fire text-orange-500"></i>
+                        <h3 class="text-lg font-semibold text-gray-800">Mapa de Calor de Cumplimiento</h3>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <?php include __DIR__ . '/cards/card-heatmap.php'; ?>
+                </div>
+            </div>
+
 
         </div>
 

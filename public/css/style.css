@@ -271,3 +271,205 @@
     justify-content: center;
     font-size: 0.7rem;
 }
+
+/* ============ HEATMAP - MATRIZ DE RIESGO ============ */
+
+/* Contenedor del heatmap con espaciado superior */
+.heatmap-container {
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+}
+
+/* Matriz de riesgo - tabla */
+.risk-matrix-table {
+    border-spacing: 4px;
+    border-collapse: separate;
+}
+
+.risk-matrix-table td {
+    transition: all 0.2s ease;
+}
+
+.risk-matrix-table td:hover {
+    transform: scale(1.05);
+    z-index: 10;
+    position: relative;
+}
+
+/* Celdas de la matriz con altura fija */
+.risk-cell {
+    height: 80px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.risk-cell:hover {
+    border-color: #374151;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Números dentro de las celdas */
+.risk-cell span {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Etiquetas de ejes */
+.axis-label-vertical {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #374151;
+    padding-right: 1rem;
+    min-width: 2rem;
+}
+
+.axis-label-horizontal {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #374151;
+}
+
+/* Headers de fila/columna */
+.risk-matrix-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-align: center;
+    padding: 0.5rem;
+}
+
+/* Colores de riesgo con mejores contrastes */
+.risk-critical {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+}
+
+.risk-high {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+}
+
+.risk-medium {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #78350f;
+}
+
+.risk-low {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    color: white;
+}
+
+/* Leyenda y estadísticas */
+.heatmap-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.legend-color {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Tarjetas de resumen estadístico */
+.heatmap-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.stat-card {
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-card-label {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .risk-cell {
+        height: 60px;
+        min-height: 60px;
+    }
+    
+    .risk-cell span {
+        font-size: 1.25rem;
+    }
+    
+    .risk-matrix-header {
+        font-size: 0.65rem;
+    }
+    
+    .axis-label-vertical,
+    .axis-label-horizontal {
+        font-size: 0.75rem;
+    }
+    
+    .heatmap-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Animación de entrada */
+@keyframes fadeInMatrix {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.risk-matrix-table {
+    animation: fadeInMatrix 0.5s ease-out;
+}
