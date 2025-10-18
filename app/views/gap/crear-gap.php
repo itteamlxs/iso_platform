@@ -38,16 +38,16 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Control ISO 27001 <span class="text-red-600">*</span>
                     </label>
-                    <select name="control_id" required 
+                    <select name="control_id" id="control_id" required 
                             class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500">
                         <option value="">-- Seleccione un control --</option>
                         <?php foreach ($controles as $control): ?>
-                            <option value="<?php echo $control['id']; ?>">
+                            <option value="<?php echo $control['id']; ?>" data-aplicable="<?php echo $control['aplicable']; ?>">
                                 <?php echo $control['codigo']; ?> - <?php echo htmlspecialchars($control['nombre']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">Seleccione el control donde se identificó la brecha</p>
+                    <p class="text-xs text-gray-500 mt-1">Solo se muestran controles aplicables a su organización</p>
                 </div>
 
                 <!-- Descripción de la brecha -->
@@ -199,12 +199,24 @@ function eliminarFila(id) {
     document.getElementById(id).remove();
 }
 
+// Validación del formulario
 document.getElementById('form-crear-gap').addEventListener('submit', function(e) {
     const filas = document.querySelectorAll('.accion-fila');
     
     if (filas.length === 0) {
         e.preventDefault();
         alert('Debe agregar al menos una acción correctiva');
+        return;
+    }
+    
+    // Validación adicional: control seleccionado debe ser aplicable
+    const controlSelect = document.getElementById('control_id');
+    const selectedOption = controlSelect.options[controlSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.dataset.aplicable === '0') {
+        e.preventDefault();
+        alert('No puede crear un GAP en un control no aplicable');
+        controlSelect.value = '';
         return;
     }
 });

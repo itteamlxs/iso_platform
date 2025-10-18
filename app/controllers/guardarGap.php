@@ -1,11 +1,12 @@
 <?php
 /**
  * Procesar creación de GAP con acciones correctivas
+ * VERSIÓN 2.0 - Validación mejorada y simplificada
  */
 
 require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/Gap.php';
-require_once __DIR__ . '/../controllers/GapController.php';
+require_once __DIR__ . '/GapController.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . BASE_URL . '/public/gap');
@@ -42,21 +43,9 @@ for ($i = 0; $i < $num_acciones; $i++) {
     }
 }
 
-// Validar datos obligatorios
+// Validación de datos obligatorios
 if (empty($datos['control_id']) || empty($datos['brecha'])) {
     $_SESSION['mensaje'] = 'Faltan datos obligatorios (control y brecha)';
-    $_SESSION['mensaje_tipo'] = 'error';
-    header('Location: ' . BASE_URL . '/public/gap/crear');
-    exit;
-}
-
-// Validar que el control sea aplicable
-require_once __DIR__ . '/../controllers/ControlesController.php';
-$controlesController = new \App\Controllers\ControlesController();
-$control = $controlesController->detalle($datos['control_id']);
-
-if (!$control || $control['aplicable'] == 0) {
-    $_SESSION['mensaje'] = 'No se puede crear GAP en un control no aplicable';
     $_SESSION['mensaje_tipo'] = 'error';
     header('Location: ' . BASE_URL . '/public/gap/crear');
     exit;
@@ -69,7 +58,7 @@ if (count($acciones) === 0) {
     exit;
 }
 
-// Crear GAP con acciones (transacción)
+// Validación de aplicabilidad (ahora se hace en el modelo)
 $result = $controller->crearConAcciones($datos, $acciones);
 
 if ($result['success']) {

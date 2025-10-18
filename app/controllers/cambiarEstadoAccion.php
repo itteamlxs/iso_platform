@@ -1,9 +1,12 @@
 <?php
 /**
  * Cambiar estado de acción correctiva
+ * VERSIÓN 2.0 - Actualiza avance del GAP automáticamente
  */
 
 require_once __DIR__ . '/../models/Database.php';
+require_once __DIR__ . '/../models/Gap.php';
+require_once __DIR__ . '/GapController.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . BASE_URL . '/public/gap');
@@ -29,7 +32,7 @@ try {
     // Verificar que la acción pertenece al GAP
     $sql_check = "SELECT COUNT(*) as existe FROM acciones a 
                   INNER JOIN gap_items g ON a.gap_id = g.id 
-                  WHERE a.id = :accion_id AND g.id = :gap_id";
+                  WHERE a.id = :accion_id AND g.id = :gap_id AND a.estado != 'inactiva'";
     $stmt_check = $db->prepare($sql_check);
     $stmt_check->bindParam(':accion_id', $accion_id, PDO::PARAM_INT);
     $stmt_check->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
@@ -40,14 +43,23 @@ try {
         throw new Exception('Acción no encontrada o no pertenece a este GAP');
     }
     
-    // Actualizar estado
+    // Actualizar estado de la acción
     $sql = "UPDATE acciones SET estado = :estado WHERE id = :accion_id";
     $stmt = $db->prepare($sql);
     $stmt->bindParam(':estado', $nuevo_estado, PDO::PARAM_STR);
     $stmt->bindParam(':accion_id', $accion_id, PDO::PARAM_INT);
     $stmt->execute();
     
+    // Recalcular avance del GAP automáticamente
+    $controller = new \App\Controllers\GapController();
+    $avance_result = $controller->actualizarAvance($gap_id);
+    
     $_SESSION['mensaje'] = 'Estado de acción actualizado a: ' . ucfirst(str_replace('_', ' ', $nuevo_estado));
+    
+    if ($avance_result['success'] && $avance_result['avance'] >= 100) {
+        $_SESSION['mensaje'] .= ' - GAP marcado como CERRADO (100%)';
+    }
+    
     $_SESSION['mensaje_tipo'] = 'success';
     
 } catch (\Exception $e) {

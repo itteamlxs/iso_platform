@@ -66,6 +66,11 @@ require_once __DIR__ . '/../components/sidebar.php';
                                 <span class="text-xs px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
                                     <?php echo htmlspecialchars($gap['dominio']); ?>
                                 </span>
+                                <?php if ($avance_calculado >= 100): ?>
+                                    <span class="text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full font-semibold">
+                                        <i class="fas fa-check mr-1"></i>CERRADO
+                                    </span>
+                                <?php endif; ?>
                             </div>
                             <h2 class="text-xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($gap['control']); ?></h2>
                         </div>
@@ -93,7 +98,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <div class="bg-blue-600 h-4 rounded-full transition-all" style="width: <?php echo $avance_calculado; ?>%"></div>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
-                            <i class="fas fa-info-circle mr-1"></i>Basado en: <?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> acciones completadas
+                            <i class="fas fa-info-circle mr-1"></i>Calculado automáticamente: <?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> acciones completadas
                         </p>
                     </div>
                 </div>
@@ -121,6 +126,11 @@ require_once __DIR__ . '/../components/sidebar.php';
                                     'en_progreso' => 'completada',
                                     'completada' => 'pendiente'
                                 ];
+                                $siguiente_label = [
+                                    'pendiente' => 'Iniciar',
+                                    'en_progreso' => 'Completar',
+                                    'completada' => 'Reiniciar'
+                                ];
                             ?>
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <div class="flex items-start justify-between">
@@ -140,7 +150,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                                             <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
                                             <input type="hidden" name="nuevo_estado" value="<?php echo $siguiente_estado[$accion['estado']]; ?>">
                                             <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition">
-                                                <i class="fas fa-arrow-right mr-1"></i>Avanzar
+                                                <i class="fas fa-arrow-right mr-1"></i><?php echo $siguiente_label[$accion['estado']]; ?>
                                             </button>
                                         </form>
                                     </div>
@@ -185,6 +195,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                         <div>
                             <p class="text-xs text-gray-600">Total Acciones</p>
                             <p class="text-sm font-medium text-gray-900"><?php echo $total_acciones; ?></p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600">Avance Automático</p>
+                            <p class="text-sm font-medium text-blue-600"><?php echo $avance_calculado; ?>%</p>
                         </div>
                         <?php if ($gap['fecha_real_cierre']): ?>
                         <div>
@@ -269,7 +283,7 @@ require_once __DIR__ . '/../components/sidebar.php';
 <div id="modal-eliminar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
-        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción no se puede deshacer.</p>
+        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción marcará el GAP y sus acciones como inactivas.</p>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/eliminar">
             <input type="hidden" name="gap_id" id="modal-gap-id" value="">

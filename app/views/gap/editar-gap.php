@@ -53,7 +53,6 @@ require_once __DIR__ . '/../components/sidebar.php';
             <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/actualizar" id="form-editar-gap">
                 
                 <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
-                <input type="hidden" name="avance_modificado" id="avance_modificado" value="0">
                 
                 <!-- Info del control (solo lectura) -->
                 <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -67,8 +66,21 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($gap['dominio']); ?></p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-600">Acciones</p>
-                            <p class="text-sm font-medium text-gray-900"><?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> completadas</p>
+                            <p class="text-xs text-gray-600">Avance Automático</p>
+                            <p class="text-sm font-medium text-blue-600">
+                                <?php echo $avance_automatico; ?>% (<?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> acciones)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerta informativa -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-600 mt-1 mr-3"></i>
+                        <div class="text-sm text-blue-900">
+                            <p class="font-semibold mb-1">Avance Automático</p>
+                            <p>El avance se calcula automáticamente según las acciones completadas. Para aumentar el avance, complete más acciones en el detalle del GAP.</p>
                         </div>
                     </div>
                 </div>
@@ -93,8 +105,8 @@ require_once __DIR__ . '/../components/sidebar.php';
                               placeholder="¿Qué se espera lograr?"><?php echo htmlspecialchars($gap['objetivo'] ?? ''); ?></textarea>
                 </div>
 
-                <!-- Grid: Prioridad, Responsable, Avance -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- Grid: Prioridad y Responsable -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     
                     <!-- Prioridad -->
                     <div>
@@ -120,45 +132,30 @@ require_once __DIR__ . '/../components/sidebar.php';
                                value="<?php echo htmlspecialchars($gap['responsable'] ?? ''); ?>">
                     </div>
 
-                    <!-- Avance de implementación -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Avance Manual (%) <span class="text-red-600">*</span>
-                        </label>
-                        <input type="number" name="avance" id="campo-avance" min="0" max="100" required
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
-                               value="<?php echo $gap['avance']; ?>"
-                               data-avance-inicial="<?php echo $gap['avance']; ?>">
-                        <p class="text-xs text-gray-500 mt-1">Automático: <?php echo $avance_automatico; ?>% (<?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?>)</p>
-                    </div>
-
                 </div>
 
-                <!-- Fechas -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    
-                    <!-- Fecha estimada -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Fecha Estimada de Cierre
-                        </label>
-                        <input type="date" name="fecha_estimada_cierre"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
-                               value="<?php echo $gap['fecha_estimada_cierre'] ? date('Y-m-d', strtotime($gap['fecha_estimada_cierre'])) : ''; ?>">
-                    </div>
-
-                    <!-- Fecha real de cierre -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Fecha Real de Cierre
-                        </label>
-                        <input type="date" name="fecha_real_cierre"
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
-                               value="<?php echo $gap['fecha_real_cierre'] ? date('Y-m-d', strtotime($gap['fecha_real_cierre'])) : ''; ?>">
-                        <p class="text-xs text-gray-500 mt-1">Se completa automáticamente al llegar a 100%</p>
-                    </div>
-
+                <!-- Fecha estimada de cierre -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha Estimada de Cierre
+                    </label>
+                    <input type="date" name="fecha_estimada_cierre"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
+                           value="<?php echo $gap['fecha_estimada_cierre'] ? date('Y-m-d', strtotime($gap['fecha_estimada_cierre'])) : ''; ?>">
                 </div>
+
+                <!-- Info de cierre automático -->
+                <?php if ($gap['fecha_real_cierre']): ?>
+                <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 text-xl mr-3"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-green-900">GAP Cerrado</p>
+                            <p class="text-xs text-green-700">Fecha de cierre: <?php echo date('d/m/Y', strtotime($gap['fecha_real_cierre'])); ?></p>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Botones -->
                 <div class="flex space-x-3 pt-6 border-t">
@@ -177,29 +174,5 @@ require_once __DIR__ . '/../components/sidebar.php';
 
     </div>
 </main>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const campoAvance = document.getElementById('campo-avance');
-    const flagModificado = document.getElementById('avance_modificado');
-    const avanceInicial = campoAvance.getAttribute('data-avance-inicial');
-    
-    campoAvance.addEventListener('change', function() {
-        if (this.value !== avanceInicial) {
-            flagModificado.value = '1';
-        } else {
-            flagModificado.value = '0';
-        }
-    });
-    
-    document.getElementById('form-editar-gap').addEventListener('submit', function(e) {
-        if (campoAvance.value !== avanceInicial) {
-            flagModificado.value = '1';
-        } else {
-            flagModificado.value = '0';
-        }
-    });
-});
-</script>
 
 <?php require_once __DIR__ . '/../components/footer.php'; ?>

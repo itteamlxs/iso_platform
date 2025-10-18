@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-
 use PDO;
 
 /**
  * Gap Model
  * Gestión de análisis de brechas
+ * VERSIÓN 2.0 - Optimizado con avance automático y soft delete en cascada
  */
 class Gap {
     
@@ -35,7 +35,7 @@ class Gap {
                         c.nombre as control,
                         cd.nombre as dominio,
                         s.id as soa_id,
-                        (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id) as total_acciones,
+                        (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id AND estado != 'inactiva') as total_acciones,
                         (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id AND estado = 'completada') as acciones_completadas
                     FROM gap_items g
                     INNER JOIN soa_entries s ON g.soa_id = s.id
@@ -106,52 +106,87 @@ class Gap {
     }
     
     /**
-     * Crear nuevo GAP
-     * Recibe control_id, busca el soa_id correspondiente
+     * Método centralizado: Obtener soa_id desde control_id
      */
-    public function crear($datos) {
+    private function getSoaIdFromControl($control_id, $empresa_id) {
         try {
-            $empresa_id = $datos['empresa_id'] ?? 1;
-            
-            $sql_soa = "SELECT id FROM soa_entries 
-                        WHERE control_id = :control_id AND empresa_id = :empresa_id 
-                        LIMIT 1";
-            
-            $stmt_soa = $this->db->prepare($sql_soa);
-            $stmt_soa->bindParam(':control_id', $datos['control_id'], PDO::PARAM_INT);
-            $stmt_soa->bindParam(':empresa_id', $empresa_id, PDO::PARAM_INT);
-            $stmt_soa->execute();
-            
-            $soa_result = $stmt_soa->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$soa_result) {
-                return ['success' => false, 'error' => 'No se encontró el registro SOA para este control'];
-            }
-            
-            $soa_id = $soa_result['id'];
-            
-            $sql = "INSERT INTO gap_items 
-                    (soa_id, brecha, objetivo, prioridad, avance, fecha_estimada_cierre, responsable, estado_gap) 
-                    VALUES (:soa_id, :brecha, :objetivo, :prioridad, :avance, :fecha_estimada_cierre, :responsable, 'activo')";
+            $sql = "SELECT id FROM soa_entries 
+                    WHERE control_id = :control_id 
+                    AND empresa_id = :empresa_id 
+                    AND aplicable = 1
+                    LIMIT 1";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':soa_id', $soa_id, PDO::PARAM_INT);
-            $stmt->bindParam(':brecha', $datos['brecha'], PDO::PARAM_STR);
-            $stmt->bindParam(':objetivo', $datos['objetivo'], PDO::PARAM_STR);
-            $stmt->bindParam(':prioridad', $datos['prioridad'] ?? 'media', PDO::PARAM_STR);
-            $stmt->bindParam(':avance', 0, PDO::PARAM_INT);
-            $stmt->bindParam(':fecha_estimada_cierre', $datos['fecha_estimada_cierre'], PDO::PARAM_STR);
-            $stmt->bindParam(':responsable', $datos['responsable'], PDO::PARAM_STR);
-            
+            $stmt->bindParam(':control_id', $control_id, PDO::PARAM_INT);
+            $stmt->bindParam(':empresa_id', $empresa_id, PDO::PARAM_INT);
             $stmt->execute();
             
-            return [
-                'success' => true,
-                'gap_id' => $this->db->lastInsertId()
-            ];
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            return $result ? $result['id'] : null;
             
         } catch (\Exception $e) {
-            error_log('Error en Gap::crear: ' . $e->getMessage());
+            error_log('Error en Gap::getSoaIdFromControl: ' . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Calcular avance automático basado en acciones
+     */
+    private function calcularAvanceAutomatico($gap_id) {
+        try {
+            $sql = "SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) as completadas
+                    FROM acciones 
+                    WHERE gap_id = :gap_id AND estado != 'inactiva'";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result['total'] > 0) {
+                return round(($result['completadas'] / $result['total']) * 100);
+            }
+            
+            return 0;
+            
+        } catch (\Exception $e) {
+            error_log('Error en Gap::calcularAvanceAutomatico: ' . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Actualizar avance de un GAP (llamado desde cambios de acciones)
+     */
+    public function actualizarAvance($gap_id) {
+        try {
+            $avance = $this->calcularAvanceAutomatico($gap_id);
+            
+            $fecha_real_cierre = null;
+            if ($avance >= 100) {
+                $fecha_real_cierre = date('Y-m-d');
+            }
+            
+            $sql = "UPDATE gap_items 
+                    SET avance = :avance, 
+                        fecha_real_cierre = :fecha_cierre
+                    WHERE id = :gap_id";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':avance', $avance, PDO::PARAM_INT);
+            $stmt->bindParam(':fecha_cierre', $fecha_real_cierre, PDO::PARAM_STR);
+            $stmt->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return ['success' => true, 'avance' => $avance];
+            
+        } catch (\Exception $e) {
+            error_log('Error en Gap::actualizarAvance: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -165,40 +200,31 @@ class Gap {
             
             $empresa_id = $datos['empresa_id'] ?? 1;
             
-            $sql_soa = "SELECT id FROM soa_entries 
-                        WHERE control_id = :control_id AND empresa_id = :empresa_id 
-                        LIMIT 1";
+            // Obtener soa_id usando método centralizado
+            $soa_id = $this->getSoaIdFromControl($datos['control_id'], $empresa_id);
             
-            $stmt_soa = $this->db->prepare($sql_soa);
-            $stmt_soa->bindParam(':control_id', $datos['control_id'], PDO::PARAM_INT);
-            $stmt_soa->bindParam(':empresa_id', $empresa_id, PDO::PARAM_INT);
-            $stmt_soa->execute();
-            
-            $soa_result = $stmt_soa->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$soa_result) {
+            if (!$soa_id) {
                 $this->db->rollBack();
-                return ['success' => false, 'error' => 'No se encontró el registro SOA para este control'];
+                return ['success' => false, 'error' => 'Control no aplicable o no encontrado'];
             }
             
-            $soa_id = $soa_result['id'];
-            
+            // Crear GAP con avance inicial en 0
             $sql_gap = "INSERT INTO gap_items 
                         (soa_id, brecha, objetivo, prioridad, avance, fecha_estimada_cierre, responsable, estado_gap) 
-                        VALUES (:soa_id, :brecha, :objetivo, :prioridad, :avance, :fecha_estimada_cierre, :responsable, 'activo')";
+                        VALUES (:soa_id, :brecha, :objetivo, :prioridad, 0, :fecha_estimada_cierre, :responsable, 'activo')";
             
             $stmt_gap = $this->db->prepare($sql_gap);
             $stmt_gap->bindValue(':soa_id', $soa_id, PDO::PARAM_INT);
             $stmt_gap->bindValue(':brecha', $datos['brecha'], PDO::PARAM_STR);
             $stmt_gap->bindValue(':objetivo', $datos['objetivo'] ?? null, PDO::PARAM_STR);
             $stmt_gap->bindValue(':prioridad', $datos['prioridad'] ?? 'media', PDO::PARAM_STR);
-            $stmt_gap->bindValue(':avance', 0, PDO::PARAM_INT);
             $stmt_gap->bindValue(':fecha_estimada_cierre', $datos['fecha_estimada_cierre'] ?? null, PDO::PARAM_STR);
             $stmt_gap->bindValue(':responsable', $datos['responsable'] ?? null, PDO::PARAM_STR);
             
             $stmt_gap->execute();
             $gap_id = $this->db->lastInsertId();
             
+            // Crear acciones
             $sql_accion = "INSERT INTO acciones 
                            (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado) 
                            VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente')";
@@ -231,7 +257,7 @@ class Gap {
     }
     
     /**
-     * Actualizar GAP con lógica híbrida de avance
+     * Actualizar GAP (sin modificar avance manualmente)
      */
     public function actualizar($gap_id, $datos) {
         try {
@@ -239,9 +265,7 @@ class Gap {
                         brecha = :brecha,
                         objetivo = :objetivo,
                         prioridad = :prioridad,
-                        avance = :avance,
                         fecha_estimada_cierre = :fecha_estimada_cierre,
-                        fecha_real_cierre = :fecha_real_cierre,
                         responsable = :responsable
                     WHERE id = :gap_id";
             
@@ -249,12 +273,14 @@ class Gap {
             $stmt->bindValue(':brecha', $datos['brecha'], PDO::PARAM_STR);
             $stmt->bindValue(':objetivo', $datos['objetivo'] ?? null, PDO::PARAM_STR);
             $stmt->bindValue(':prioridad', $datos['prioridad'], PDO::PARAM_STR);
-            $stmt->bindValue(':avance', $datos['avance'], PDO::PARAM_INT);
             $stmt->bindValue(':fecha_estimada_cierre', $datos['fecha_estimada_cierre'] ?? null, PDO::PARAM_STR);
-            $stmt->bindValue(':fecha_real_cierre', $datos['fecha_real_cierre'] ?? null, PDO::PARAM_STR);
+            $stmt->bindValue(':responsable', $datos['responsable'] ?? null, PDO::PARAM_STR);
             $stmt->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
             
             $stmt->execute();
+            
+            // Recalcular avance automáticamente
+            $this->actualizarAvance($gap_id);
             
             return ['success' => true];
             
@@ -265,30 +291,44 @@ class Gap {
     }
     
     /**
-     * Eliminar GAP (soft delete - cambiar estado a eliminado)
+     * Eliminar GAP (soft delete en cascada)
      */
     public function eliminar($gap_id) {
         try {
-            $sql = "UPDATE gap_items SET estado_gap = 'eliminado' WHERE id = :gap_id";
+            $this->db->beginTransaction();
             
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
-            $stmt->execute();
+            // Soft delete del GAP
+            $sql_gap = "UPDATE gap_items SET estado_gap = 'eliminado' WHERE id = :gap_id";
+            $stmt_gap = $this->db->prepare($sql_gap);
+            $stmt_gap->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
+            $stmt_gap->execute();
+            
+            // Soft delete en cascada de acciones
+            $sql_acciones = "UPDATE acciones SET estado = 'inactiva' WHERE gap_id = :gap_id";
+            $stmt_acciones = $this->db->prepare($sql_acciones);
+            $stmt_acciones->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
+            $stmt_acciones->execute();
+            
+            $this->db->commit();
             
             return ['success' => true];
             
         } catch (\Exception $e) {
+            $this->db->rollBack();
             error_log('Error en Gap::eliminar: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
     
     /**
-     * Obtener acciones de un GAP
+     * Obtener acciones de un GAP (excluye inactivas)
      */
     public function getAcciones($gap_id) {
         try {
-            $sql = "SELECT * FROM acciones WHERE gap_id = :gap_id ORDER BY fecha_compromiso ASC";
+            $sql = "SELECT * FROM acciones 
+                    WHERE gap_id = :gap_id AND estado != 'inactiva'
+                    ORDER BY fecha_compromiso ASC";
+            
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -306,6 +346,8 @@ class Gap {
      */
     public function crearAccion($datos) {
         try {
+            $this->db->beginTransaction();
+            
             $sql = "INSERT INTO acciones 
                     (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado) 
                     VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente')";
@@ -321,9 +363,15 @@ class Gap {
             
             $stmt->execute();
             
+            // Recalcular avance del GAP
+            $this->actualizarAvance($datos['gap_id']);
+            
+            $this->db->commit();
+            
             return ['success' => true];
             
         } catch (\Exception $e) {
+            $this->db->rollBack();
             error_log('Error en Gap::crearAccion: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
