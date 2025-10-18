@@ -27,8 +27,8 @@ class Control {
                         c.descripcion,
                         cd.nombre as dominio,
                         cd.codigo as dominio_codigo,
-                        s.aplicable,
-                        s.estado,
+                        COALESCE(s.aplicable, 1) as aplicable,
+                        COALESCE(s.estado, 'no_implementado') as estado,
                         s.justificacion,
                         (SELECT COUNT(*) FROM evidencias e WHERE e.control_id = c.id AND e.empresa_id = ?) as total_evidencias
                     FROM controles c
@@ -44,15 +44,15 @@ class Control {
                 $params[] = $filtros['dominio'];
             }
             
-            // Filtro por estado
-            if (!empty($filtros['estado'])) {
-                $sql .= " AND s.estado = ?";
+            // Filtro por estado - SOLO si tiene valor real
+            if (isset($filtros['estado']) && $filtros['estado'] !== '' && $filtros['estado'] !== null) {
+                $sql .= " AND COALESCE(s.estado, 'no_implementado') = ?";
                 $params[] = $filtros['estado'];
             }
             
-            // Filtro por aplicabilidad
-            if (isset($filtros['aplicable'])) {
-                $sql .= " AND s.aplicable = ?";
+            // Filtro por aplicabilidad - SOLO si tiene valor real
+            if (isset($filtros['aplicable']) && $filtros['aplicable'] !== '' && $filtros['aplicable'] !== null) {
+                $sql .= " AND COALESCE(s.aplicable, 1) = ?";
                 $params[] = $filtros['aplicable'];
             }
             
