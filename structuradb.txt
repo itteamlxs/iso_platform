@@ -54,6 +54,8 @@ Controles específicos de seguridad organizados por dominio.
 - 8.1: Dispositivos de usuario final
 - 8.20: Seguridad de las redes
 
+**Total:** 93 controles organizados en 4 dominios
+
 ### 4. **soa_entries**
 Relación entre empresas y controles (Statement of Applicability).
 
@@ -113,7 +115,7 @@ Evidencias de implementación de controles.
 | comentarios_validacion | TEXT | Comentarios del validador |
 | validado_por | INT(11) FK | Usuario que validó |
 | fecha_validacion | TIMESTAMP | Fecha de validación |
-| archivo | VARCHAR(255) | Ruta del archivo |
+| archivo | VARCHAR(255) | Ruta del archivo subido |
 | fecha_subida | TIMESTAMP | Fecha de subida |
 
 ### 8. **tipos_evidencia**
@@ -141,6 +143,15 @@ Requerimientos base del sistema.
 | objetivo | TEXT | Objetivo del requerimiento |
 | activo | TINYINT(1) | Si está activo |
 
+**Ejemplos de requerimientos:**
+1. Manual de políticas de Seguridad de la Información
+2. Inventario de activos de información  
+3. Plan anual de capacitaciones actualizado
+4. Estrategia documentada de concientización de SI
+5. Evidencia de cumplimiento de plan y estrategia
+6. Manual de gestión de incidentes de SI
+7. Evidencia de política, procedimiento y reportes de monitoreo
+
 ### 10. **empresa_requerimientos**
 Relación entre empresas y requerimientos.
 
@@ -154,11 +165,23 @@ Relación entre empresas y requerimientos.
 | fecha_entrega | DATE | Fecha de entrega |
 | observaciones | TEXT | Observaciones |
 
+### 11. **requerimientos_controles**  [NUEVA]
+Relación entre requerimientos base y controles específicos.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | INT(11) PK | Identificador único |
+| requerimiento_base_id | INT(11) FK | Referencia a requerimientos_base |
+| control_id | INT(11) FK | Referencia a controles |
+| fecha_creacion | TIMESTAMP | Fecha de creación |
+
+**Datos:** 126 relaciones que vinculan los 7 requerimientos base con los controles correspondientes
+
 ---
 
 ## **TABLAS ADICIONALES**
 
-### 11. **usuarios**
+### 12. **usuarios**
 Usuarios del sistema.
 
 | Campo | Tipo | Descripción |
@@ -170,7 +193,7 @@ Usuarios del sistema.
 | rol | ENUM | Rol: admin/auditor/consultor |
 | creado_en | TIMESTAMP | Fecha de creación |
 
-### 12. **auditorias**
+### 13. **auditorias**
 Registro de auditorías realizadas.
 
 | Campo | Tipo | Descripción |
@@ -182,7 +205,7 @@ Registro de auditorías realizadas.
 | resumen | TEXT | Resumen de hallazgos |
 | resultado | ENUM | Resultado: conforme/no_conforme/observacion |
 
-### 13. **comentarios_control**
+### 14. **comentarios_control**
 Comentarios sobre controles específicos.
 
 | Campo | Tipo | Descripción |
@@ -193,7 +216,7 @@ Comentarios sobre controles específicos.
 | comentario | TEXT | Comentario |
 | fecha | TIMESTAMP | Fecha del comentario |
 
-### 14. **historial_estado**
+### 15. **historial_estado**
 Historial de cambios de estado en controles.
 
 | Campo | Tipo | Descripción |
@@ -205,7 +228,7 @@ Historial de cambios de estado en controles.
 | fecha | TIMESTAMP | Fecha del cambio |
 | usuario_id | INT(11) FK | Usuario que realizó el cambio |
 
-### 15. **riesgos**
+### 16. **riesgos**
 Registro de riesgos identificados.
 
 | Campo | Tipo | Descripción |
@@ -255,6 +278,19 @@ Estadísticas de requerimientos por empresa:
 - Completados, en proceso, pendientes
 - Porcentaje de completado
 
+### 7. **view_control_estado** [NUEVA]
+Estado de controles con conteo de evidencias:
+- Código y nombre del control
+- Estado actual
+- Número de evidencias asociadas
+
+### 8. **view_gap_prioridad** [NUEVA]
+Gaps organizados por prioridad:
+- ID del gap
+- Código del control asociado
+- Descripción de la brecha
+- Prioridad y avance actual
+
 ---
 
 ## **PROCEDIMIENTOS ALMACENADOS**
@@ -303,6 +339,8 @@ empresas (1) ──── (N) soa_entries (N) ──── (1) controles
                         └─── (N) comentarios_control
 
 empresas (1) ──── (N) empresa_requerimientos (N) ──── (1) requerimientos_base
+                                                              │
+                                                              └─── (N) requerimientos_controles (N) ──── (1) controles
 
 controles (N) ──── (1) controles_dominio
 ```
@@ -317,11 +355,14 @@ controles (N) ──── (1) controles_dominio
 - `controles_dominio.codigo` - Código único por dominio
 - `usuarios.email` - Email único por usuario
 - `uk_empresa_req` - Combinación única empresa + requerimiento
+- `uk_req_control` - Combinación única requerimiento_base + control [NUEVO]
 
 ### Índices de Rendimiento:
 - `idx_empresa_control` - Para búsquedas rápidas en soa_entries
 - `idx_soa` - Para comentarios de control
 - `idx_nombre`, `idx_ruc` - Para búsquedas de empresas
+- `idx_req_base` - Para requerimientos_controles [NUEVO]
+- `idx_control` - Para requerimientos_controles [NUEVO]
 
 ---
 
@@ -341,9 +382,12 @@ controles (N) ──── (1) controles_dominio
 ## **CAMBIOS RECIENTES**
 
 ### Versión Actual:
+- **Nueva tabla:** `requerimientos_controles` - Relaciona requerimientos base con controles específicos (126 relaciones)
+- **Nuevas vistas:** `view_control_estado`, `view_gap_prioridad` - Para reportes mejorados
 - **gap_items.estado_gap:** Implementado soft delete con columna estado_gap (activo/eliminado)
 - **Filtro de aplicabilidad:** Los GAPs solo pueden crearse en controles con aplicable = 1
 - **Avance híbrido:** El avance puede ser manual o automático basado en acciones completadas
+- **Datos reales:** 93 controles, 7 requerimientos base, 126 relaciones entre ellos
 
 ---
 
