@@ -39,39 +39,30 @@ class Evidencia {
                     LEFT JOIN tipos_evidencia te ON e.tipo_evidencia_id = te.id
                     WHERE e.empresa_id = :empresa_id";
             
+            $params = [':empresa_id' => $empresa_id];
+            
             // Filtro por control
             if (!empty($filtros['control_id'])) {
                 $sql .= " AND e.control_id = :control_id";
+                $params[':control_id'] = $filtros['control_id'];
             }
             
             // Filtro por estado
             if (!empty($filtros['estado'])) {
                 $sql .= " AND e.estado_validacion = :estado";
+                $params[':estado'] = $filtros['estado'];
             }
             
             // Filtro por tipo
             if (!empty($filtros['tipo'])) {
                 $sql .= " AND e.tipo_evidencia_id = :tipo";
+                $params[':tipo'] = $filtros['tipo'];
             }
             
             $sql .= " ORDER BY e.fecha_subida DESC";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
-            
-            if (!empty($filtros['control_id'])) {
-                $stmt->bindValue(':control_id', $filtros['control_id'], PDO::PARAM_INT);
-            }
-            
-            if (!empty($filtros['estado'])) {
-                $stmt->bindValue(':estado', $filtros['estado'], PDO::PARAM_STR);
-            }
-            
-            if (!empty($filtros['tipo'])) {
-                $stmt->bindValue(':tipo', $filtros['tipo'], PDO::PARAM_INT);
-            }
-            
-            $stmt->execute();
+            $stmt->execute($params);
             
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
             
@@ -121,7 +112,14 @@ class Evidencia {
             $stmt->bindValue(':empresa_id', $datos['empresa_id'], PDO::PARAM_INT);
             $stmt->bindValue(':control_id', $datos['control_id'], PDO::PARAM_INT);
             $stmt->bindValue(':descripcion', $datos['descripcion'], PDO::PARAM_STR);
-            $stmt->bindValue(':tipo_evidencia_id', $datos['tipo_evidencia_id'] ?? null, PDO::PARAM_INT);
+            
+            // Permitir NULL en tipo_evidencia_id
+            if (isset($datos['tipo_evidencia_id']) && !empty($datos['tipo_evidencia_id'])) {
+                $stmt->bindValue(':tipo_evidencia_id', $datos['tipo_evidencia_id'], PDO::PARAM_INT);
+            } else {
+                $stmt->bindValue(':tipo_evidencia_id', null, PDO::PARAM_NULL);
+            }
+            
             $stmt->bindValue(':archivo', $datos['archivo'], PDO::PARAM_STR);
             
             $stmt->execute();

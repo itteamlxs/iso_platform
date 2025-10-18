@@ -60,10 +60,22 @@ ini_set('session.use_only_cookies', 1);
 
 // Uploads
 define('UPLOAD_MAX_SIZE', (int)getenv('UPLOAD_MAX_SIZE'));
-define('UPLOAD_ALLOWED_TYPES', ['pdf', 'docx', 'doc', 'xlsx', 'png', 'jpg', 'jpeg']);
-define('UPLOAD_PATH', getenv('UPLOAD_PATH'));
+define('UPLOAD_ALLOWED_TYPES', ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'png', 'jpg', 'jpeg']);
 
-// Crear directorio solo si no existe y tenemos permisos
+// Usar directamente la ruta del .env (ya es absoluta)
+define('UPLOAD_PATH', rtrim(getenv('UPLOAD_PATH'), '/'));
+
+// Crear directorio si no existe
 if (!file_exists(UPLOAD_PATH)) {
-    @mkdir(UPLOAD_PATH, 0755, true);
+    if (!mkdir(UPLOAD_PATH, 0755, true)) {
+        error_log('ERROR: No se pudo crear el directorio de uploads: ' . UPLOAD_PATH);
+    }
+}
+
+// Verificar permisos de escritura
+if (!is_writable(UPLOAD_PATH)) {
+    error_log('ERROR: El directorio de uploads no tiene permisos de escritura: ' . UPLOAD_PATH);
+    if (DEBUG_MODE) {
+        echo '<div style="background:red;color:white;padding:10px;">ERROR: Directorio uploads sin permisos de escritura</div>';
+    }
 }

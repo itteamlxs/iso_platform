@@ -21,6 +21,12 @@ $request = $_SERVER['REQUEST_URI'];
 $request = str_replace('/iso_platform/public', '', $request);
 $request = strtok($request, '?'); // Remover query strings
 
+// Manejo especial para descargar evidencias
+if (strpos($request, '/descargar-evidencia') === 0 && isset($_GET['file'])) {
+    require_once __DIR__ . '/descargar-evidencia.php';
+    exit;
+}
+
 // Router básico - ORDEN IMPORTANTÍSIMO: específicas ANTES de genéricas
 switch (true) {
     case ($request === '/' || $request === '' || $request === '/dashboard'):

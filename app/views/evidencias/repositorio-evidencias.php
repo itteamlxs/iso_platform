@@ -164,7 +164,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <a href="<?php echo BASE_URL . '/uploads/' . $evidencia['archivo']; ?>" 
+                                    <a href="<?php echo BASE_URL; ?>/public/descargar-evidencia.php?file=<?php echo urlencode($evidencia['archivo']); ?>" 
                                        target="_blank"
                                        class="flex items-center space-x-2 text-blue-600 hover:text-blue-800">
                                         <i class="fas <?php echo $icon_class; ?>"></i>

@@ -65,6 +65,16 @@ if (!in_array($extension, UPLOAD_ALLOWED_TYPES)) {
     exit;
 }
 
+// Crear directorio si no existe
+if (!file_exists(UPLOAD_PATH)) {
+    if (!mkdir(UPLOAD_PATH, 0755, true)) {
+        $_SESSION['mensaje'] = 'Error al crear directorio de uploads';
+        $_SESSION['mensaje_tipo'] = 'error';
+        header('Location: ' . BASE_URL . '/public/evidencias/subir');
+        exit;
+    }
+}
+
 // Generar nombre único
 $nombre_archivo = uniqid() . '_' . time() . '.' . $extension;
 $ruta_destino = UPLOAD_PATH . '/' . $nombre_archivo;
