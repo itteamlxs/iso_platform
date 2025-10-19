@@ -7,6 +7,7 @@ use PDO;
 /**
  * Dashboard Controller
  * Maneja la lógica del dashboard principal
+ * VERSIÓN 2.0 - Filtros actualizados para excluir GAPs y acciones eliminadas
  */
 class DashboardController {
     
@@ -121,7 +122,8 @@ class DashboardController {
     }
     
     /**
-     * Obtener GAPs de alta prioridad
+     * Obtener GAPs de alta prioridad (SOLO ACTIVOS)
+     * CORRECCIÓN: Agregado filtro estado_gap = 'activo'
      */
     public function getGapsPrioritarios() {
         try {
@@ -134,7 +136,10 @@ class DashboardController {
                     FROM gap_items g
                     JOIN soa_entries s ON g.soa_id = s.id
                     JOIN controles c ON s.control_id = c.id
-                    WHERE s.empresa_id = ? AND g.prioridad = 'alta'
+                    WHERE s.empresa_id = ? 
+                    AND g.prioridad = 'alta'
+                    AND g.estado_gap = 'activo'
+                    AND s.aplicable = 1
                     ORDER BY g.avance ASC
                     LIMIT 5";
             
@@ -191,7 +196,8 @@ class DashboardController {
     }
     
     /**
-     * Obtener acciones pendientes
+     * Obtener acciones pendientes (SOLO ACTIVAS)
+     * CORRECCIÓN: Agregado filtro estado_accion = 'activo' y estado_gap = 'activo'
      */
     public function getAccionesPendientes() {
         try {
@@ -206,7 +212,11 @@ class DashboardController {
                     JOIN gap_items g ON a.gap_id = g.id
                     JOIN soa_entries s ON g.soa_id = s.id
                     JOIN controles c ON s.control_id = c.id
-                    WHERE s.empresa_id = ? AND a.estado IN ('pendiente', 'en_progreso')
+                    WHERE s.empresa_id = ? 
+                    AND a.estado IN ('pendiente', 'en_progreso')
+                    AND a.estado_accion = 'activo'
+                    AND g.estado_gap = 'activo'
+                    AND s.aplicable = 1
                     ORDER BY a.fecha_compromiso ASC
                     LIMIT 5";
             

@@ -9,7 +9,7 @@ require_once __DIR__ . '/Database.php';
 /**
  * Requerimiento Model
  * Gestión de requerimientos base ISO 27001
- * VERSIÓN 3.0 - Con validación de evidencias APROBADAS para completitud automática
+ * VERSIÓN 3.1 - Corrección crítica: validación evidencias aprobadas por CADA control
  */
 class Requerimiento {
     
@@ -214,44 +214,73 @@ class Requerimiento {
     
     /**
      * Verificar si todos los controles asociados están implementados con evidencias APROBADAS
-     * MEJORA: Ahora valida que las evidencias estén en estado 'aprobada'
+     * CORRECCIÓN CRÍTICA: Ahora valida que CADA control tenga AL MENOS UNA evidencia aprobada
      */
     public function verificarCompletitudAutomatica($requerimiento_base_id, $empresa_id) {
         try {
-            $sql = "SELECT 
-                        COUNT(DISTINCT c.id) as total_controles,
-                        SUM(CASE WHEN s.estado = 'implementado' AND s.aplicable = 1 THEN 1 ELSE 0 END) as implementados,
-                        COUNT(DISTINCT CASE 
-                            WHEN e.estado_validacion = 'aprobada' AND s.aplicable = 1 
-                            THEN c.id 
-                            ELSE NULL 
-                        END) as con_evidencias_aprobadas
-                    FROM requerimientos_controles rc
-                    INNER JOIN controles c ON rc.control_id = c.id
-                    INNER JOIN soa_entries s ON c.id = s.control_id
-                    LEFT JOIN evidencias e ON c.id = e.control_id AND e.empresa_id = :empresa_id_ev
-                    WHERE rc.requerimiento_base_id = :req_id 
-                    AND s.empresa_id = :empresa_id_soa
-                    AND s.aplicable = 1";
+            // PASO 1: Obtener todos los controles aplicables asociados al requerimiento
+            $sql_controles = "SELECT DISTINCT c.id
+                             FROM requerimientos_controles rc
+                             INNER JOIN controles c ON rc.control_id = c.id
+                             INNER JOIN soa_entries s ON c.id = s.control_id
+                             WHERE rc.requerimiento_base_id = :req_id 
+                             AND s.empresa_id = :empresa_id
+                             AND s.aplicable = 1";
             
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':req_id', $requerimiento_base_id, PDO::PARAM_INT);
-            $stmt->bindValue(':empresa_id_soa', $empresa_id, PDO::PARAM_INT);
-            $stmt->bindValue(':empresa_id_ev', $empresa_id, PDO::PARAM_INT);
-            $stmt->execute();
+            $stmt_controles = $this->db->prepare($sql_controles);
+            $stmt_controles->bindValue(':req_id', $requerimiento_base_id, PDO::PARAM_INT);
+            $stmt_controles->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+            $stmt_controles->execute();
             
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $controles_aplicables = $stmt_controles->fetchAll(PDO::FETCH_COLUMN);
             
-            // CONDICIÓN MEJORADA: 
-            // 1. Todos los controles aplicables deben estar implementados
-            // 2. Todos los controles aplicables deben tener AL MENOS UNA evidencia aprobada
-            if ($result['total_controles'] > 0 && 
-                $result['implementados'] == $result['total_controles'] &&
-                $result['con_evidencias_aprobadas'] == $result['total_controles']) {
-                return true;
+            // Si no hay controles aplicables, no puede estar completo
+            if (count($controles_aplicables) == 0) {
+                return false;
             }
             
-            return false;
+            // PASO 2: Verificar que TODOS los controles estén implementados
+            $sql_implementados = "SELECT COUNT(*) as total
+                                 FROM soa_entries s
+                                 WHERE s.control_id IN (" . implode(',', array_map('intval', $controles_aplicables)) . ")
+                                 AND s.empresa_id = :empresa_id
+                                 AND s.estado = 'implementado'
+                                 AND s.aplicable = 1";
+            
+            $stmt_impl = $this->db->prepare($sql_implementados);
+            $stmt_impl->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+            $stmt_impl->execute();
+            
+            $result_impl = $stmt_impl->fetch(PDO::FETCH_ASSOC);
+            
+            // Si no todos están implementados, retornar false
+            if ($result_impl['total'] != count($controles_aplicables)) {
+                return false;
+            }
+            
+            // PASO 3: Verificar que CADA control tenga AL MENOS UNA evidencia aprobada
+            foreach ($controles_aplicables as $control_id) {
+                $sql_evidencia = "SELECT COUNT(*) as tiene_evidencia
+                                 FROM evidencias e
+                                 WHERE e.control_id = :control_id
+                                 AND e.empresa_id = :empresa_id
+                                 AND e.estado_validacion = 'aprobada'";
+                
+                $stmt_ev = $this->db->prepare($sql_evidencia);
+                $stmt_ev->bindValue(':control_id', $control_id, PDO::PARAM_INT);
+                $stmt_ev->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+                $stmt_ev->execute();
+                
+                $result_ev = $stmt_ev->fetch(PDO::FETCH_ASSOC);
+                
+                // Si algún control NO tiene evidencias aprobadas, retornar false
+                if ($result_ev['tiene_evidencia'] == 0) {
+                    return false;
+                }
+            }
+            
+            // Si llegó aquí: TODOS los controles están implementados Y TODOS tienen evidencias aprobadas
+            return true;
             
         } catch (\Exception $e) {
             error_log('Error en Requerimiento::verificarCompletitudAutomatica: ' . $e->getMessage());
