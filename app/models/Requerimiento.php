@@ -9,7 +9,7 @@ require_once __DIR__ . '/Database.php';
 /**
  * Requerimiento Model
  * Gestión de requerimientos base ISO 27001
- * VERSIÓN 3.1 - Corrección crítica: validación evidencias aprobadas por CADA control
+ * VERSIÓN 3.2 - Corrección: validación estricta de TODAS las evidencias
  */
 class Requerimiento {
     
@@ -213,8 +213,8 @@ class Requerimiento {
     }
     
     /**
-     * Verificar si todos los controles asociados están implementados con evidencias APROBADAS
-     * CORRECCIÓN CRÍTICA: Ahora valida que CADA control tenga AL MENOS UNA evidencia aprobada
+     * Verificar si todos los controles asociados están implementados con TODAS las evidencias aprobadas
+     * CORRECCIÓN v3.2: Validación estricta de TODAS las evidencias
      */
     public function verificarCompletitudAutomatica($requerimiento_base_id, $empresa_id) {
         try {
@@ -279,7 +279,26 @@ class Requerimiento {
                 }
             }
             
-            // Si llegó aquí: TODOS los controles están implementados Y TODOS tienen evidencias aprobadas
+            // PASO 4: Verificar que NO existan evidencias pendientes o rechazadas en los controles del requerimiento
+            $sql_evidencias_pendientes = "SELECT COUNT(*) as pendientes
+                                          FROM evidencias e
+                                          WHERE e.control_id IN (" . implode(',', array_map('intval', $controles_aplicables)) . ")
+                                          AND e.empresa_id = :empresa_id
+                                          AND e.estado_validacion IN ('pendiente', 'rechazada')";
+            
+            $stmt_pend = $this->db->prepare($sql_evidencias_pendientes);
+            $stmt_pend->bindValue(':empresa_id', $empresa_id, PDO::PARAM_INT);
+            $stmt_pend->execute();
+            
+            $result_pend = $stmt_pend->fetch(PDO::FETCH_ASSOC);
+            
+            // Si existen evidencias pendientes o rechazadas, retornar false
+            if ($result_pend['pendientes'] > 0) {
+                return false;
+            }
+            
+            // Si llegó aquí: TODOS los controles están implementados, TODOS tienen evidencias aprobadas, 
+            // y NO hay evidencias pendientes/rechazadas
             return true;
             
         } catch (\Exception $e) {

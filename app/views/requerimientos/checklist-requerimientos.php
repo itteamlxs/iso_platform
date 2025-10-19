@@ -68,6 +68,22 @@ require_once __DIR__ . '/../components/sidebar.php';
             </p>
         </div>
 
+        <!-- Alerta informativa sobre completitud automática -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-600 mt-1 mr-3"></i>
+                <div class="text-sm text-blue-900">
+                    <p class="font-semibold mb-1">Completitud Automática</p>
+                    <p>Los requerimientos se marcan como <strong>"Completado"</strong> automáticamente cuando:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>Todos los controles asociados están en estado <strong>"Implementado"</strong></li>
+                        <li>Cada control tiene al menos una evidencia <strong>"Aprobada"</strong></li>
+                        <li>No existen evidencias pendientes o rechazadas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <!-- Lista de requerimientos -->
         <div class="space-y-4">
             <?php if (count($requerimientos) > 0): ?>
@@ -144,7 +160,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                                 
                                 <?php if (count($controles) > 0): ?>
                                 <div id="controles-<?php echo $req['id']; ?>" class="hidden">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                    <div class="grid grid-cols-1 gap-2 mb-3">
                                         <?php foreach ($controles as $control): 
                                             $control_badge = [
                                                 'implementado' => 'bg-green-100 text-green-800',
@@ -152,10 +168,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                                                 'no_implementado' => 'bg-red-100 text-red-800'
                                             ];
                                         ?>
-                                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200 hover:bg-gray-100 transition">
                                             <div class="flex-1">
-                                                <span class="text-xs font-medium text-gray-900"><?php echo $control['codigo']; ?></span>
-                                                <p class="text-xs text-gray-600"><?php echo htmlspecialchars(substr($control['nombre'], 0, 40)); ?>...</p>
+                                                <span class="text-sm font-medium text-gray-900"><?php echo $control['codigo']; ?></span>
+                                                <p class="text-xs text-gray-600 mt-1"><?php echo htmlspecialchars($control['nombre']); ?></p>
                                             </div>
                                             <div class="flex items-center space-x-2">
                                                 <?php if ($control['total_evidencias'] > 0): ?>
@@ -166,21 +182,37 @@ require_once __DIR__ . '/../components/sidebar.php';
                                                 <span class="text-xs px-2 py-1 rounded <?php echo $control_badge[$control['estado']] ?? 'bg-gray-100 text-gray-800'; ?>">
                                                     <?php echo ucfirst($control['estado']); ?>
                                                 </span>
+                                                <a href="<?php echo BASE_URL; ?>/public/evidencias/subir?control_id=<?php echo $control['id']; ?>" 
+                                                   class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition whitespace-nowrap"
+                                                   title="Subir evidencia para este control">
+                                                    <i class="fas fa-upload mr-1"></i>Subir
+                                                </a>
                                             </div>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
                                     
-                                    <?php if ($req['estado'] === 'completado'): ?>
-                                    <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/aplicar-controles" style="display: inline;">
-                                        <input type="hidden" name="requerimiento_base_id" value="<?php echo $req_base_id; ?>">
-                                        <button type="submit" 
-                                                onclick="return confirm('¿Marcar todos los controles asociados como IMPLEMENTADOS?')"
-                                                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
-                                            <i class="fas fa-check-double mr-2"></i>Aplicar Requerimiento a Controles
-                                        </button>
-                                    </form>
-                                    <?php endif; ?>
+                                    <!-- Botón: Aplicar Requerimiento a Controles -->
+                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-3">
+                                        <div class="flex items-start space-x-3">
+                                            <i class="fas fa-bolt text-yellow-600 text-xl mt-1"></i>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-semibold text-yellow-900 mb-1">Acción Rápida</p>
+                                                <p class="text-xs text-yellow-800 mb-3">
+                                                    Si ya tiene todos los controles implementados, puede marcarlos todos como "Implementado" con un clic. 
+                                                    Luego solo suba las evidencias correspondientes.
+                                                </p>
+                                                <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/aplicar-controles" style="display: inline;">
+                                                    <input type="hidden" name="requerimiento_base_id" value="<?php echo $req_base_id; ?>">
+                                                    <button type="submit" 
+                                                            onclick="return confirm('¿Está seguro de marcar TODOS los controles asociados como IMPLEMENTADOS?\n\nEsto es útil si ya tiene los controles implementados y solo necesita subir evidencias.')"
+                                                            class="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm transition font-medium">
+                                                        <i class="fas fa-check-double mr-2"></i>Marcar Todos los Controles como Implementados
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <?php else: ?>
                                     <p class="text-xs text-gray-500 italic">No hay controles asociados</p>
@@ -283,9 +315,12 @@ require_once __DIR__ . '/../components/sidebar.php';
                         class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
                     <option value="pendiente">Pendiente</option>
                     <option value="en_proceso">En Proceso</option>
-                    <option value="completado">Completado</option>
                     <option value="no_aplica">No Aplica</option>
                 </select>
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    El estado "Completado" se asigna automáticamente cuando todos los controles están implementados con evidencias aprobadas
+                </p>
             </div>
 
             <div class="mb-4">
