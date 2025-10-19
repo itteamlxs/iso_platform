@@ -204,4 +204,22 @@ Cards dashboard - 3 últimas son placeholders (se completarán en Sprint 5-6)
 └── vendor/
 
 
-Para continuar: Ejecutar Sprint 5 (GAP Analysis) completo.
+Consideraciones de la norma: 
+
+No, no es necesario implementar los 93 controles de la ISO 27001; la norma requiere que se evalúen todos los controles del Anexo A y se apliquen solo aquellos que sean relevantes para los riesgos y necesidades de la organización. La justificación de por qué se implementan unos y se descartan otros se documenta en la Declaración de Aplicabilidad (SoA), que es un requisito clave de la norma. 
+Consideraciones clave
+
+    Evaluación de riesgos:
+    La implementación comienza con una evaluación de riesgos para identificar qué controles son necesarios para proteger los activos de información de la empresa. 
+
+Declaración de Aplicabilidad (SoA):
+Es un documento obligatorio que detalla qué controles se van a implementar y la justificación para no implementar otros. 
+Justificación obligatoria:
+Si no se implementa un control específico, se debe justificar por qué no se aplica. 
+Responsabilidad:
+Las organizaciones deben asignar la responsabilidad para la gestión de los controles implementados. 
+Monitoreo y eficacia:
+La norma exige que se monitoree y se evalúe la eficacia de los controles implementados. 
+
+
+

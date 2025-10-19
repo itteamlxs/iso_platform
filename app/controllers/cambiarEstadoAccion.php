@@ -1,7 +1,7 @@
 <?php
 /**
  * Cambiar estado de acción correctiva
- * VERSIÓN 2.0 - Actualiza avance del GAP automáticamente
+ * VERSIÓN 3.0 - Con validación de estado_accion = 'activo'
  */
 
 require_once __DIR__ . '/../models/Database.php';
@@ -17,7 +17,7 @@ $accion_id = $_POST['accion_id'] ?? null;
 $gap_id = $_POST['gap_id'] ?? null;
 $nuevo_estado = $_POST['nuevo_estado'] ?? null;
 
-// Validar estados válidos
+// Validar estados válidos (sin 'inactiva')
 $estados_validos = ['pendiente', 'en_progreso', 'completada'];
 if (!$accion_id || !$gap_id || !$nuevo_estado || !in_array($nuevo_estado, $estados_validos)) {
     $_SESSION['mensaje'] = 'Datos incompletos o inválidos';
@@ -29,10 +29,13 @@ if (!$accion_id || !$gap_id || !$nuevo_estado || !in_array($nuevo_estado, $estad
 try {
     $db = \App\Models\Database::getInstance()->getConnection();
     
-    // Verificar que la acción pertenece al GAP
+    // Verificar que la acción pertenece al GAP y está activa
     $sql_check = "SELECT COUNT(*) as existe FROM acciones a 
                   INNER JOIN gap_items g ON a.gap_id = g.id 
-                  WHERE a.id = :accion_id AND g.id = :gap_id AND a.estado != 'inactiva'";
+                  WHERE a.id = :accion_id 
+                  AND g.id = :gap_id 
+                  AND a.estado_accion = 'activo'";
+    
     $stmt_check = $db->prepare($sql_check);
     $stmt_check->bindParam(':accion_id', $accion_id, PDO::PARAM_INT);
     $stmt_check->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
@@ -40,11 +43,11 @@ try {
     $result = $stmt_check->fetch(PDO::FETCH_ASSOC);
     
     if ($result['existe'] == 0) {
-        throw new Exception('Acción no encontrada o no pertenece a este GAP');
+        throw new Exception('Acción no encontrada, no pertenece a este GAP o está eliminada');
     }
     
     // Actualizar estado de la acción
-    $sql = "UPDATE acciones SET estado = :estado WHERE id = :accion_id";
+    $sql = "UPDATE acciones SET estado = :estado WHERE id = :accion_id AND estado_accion = 'activo'";
     $stmt = $db->prepare($sql);
     $stmt->bindParam(':estado', $nuevo_estado, PDO::PARAM_STR);
     $stmt->bindParam(':accion_id', $accion_id, PDO::PARAM_INT);

@@ -10,6 +10,9 @@ $controller = new \App\Controllers\RequerimientosController();
 $requerimientos = $controller->listar();
 $stats = $controller->getEstadisticas();
 
+// Capturar parámetro highlight desde URL
+$highlight_id = $_GET['highlight'] ?? null;
+
 require_once __DIR__ . '/../components/header.php';
 require_once __DIR__ . '/../components/sidebar.php';
 ?>
@@ -94,7 +97,9 @@ require_once __DIR__ . '/../components/sidebar.php';
                     $evidencias = $controller->getEvidenciasDeControles($req_base_id);
                 ?>
                 
-                <div class="bg-white rounded-xl shadow-sm border-l-4 <?php echo $estado_color[$req['estado']]; ?> p-6">
+                <div id="req-<?php echo $req['id']; ?>" 
+                     class="bg-white rounded-xl shadow-sm border-l-4 <?php echo $estado_color[$req['estado']]; ?> p-6 requerimiento-card transition-all"
+                     data-req-id="req-<?php echo $req['id']; ?>">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <div class="flex items-center space-x-3 mb-3">
@@ -154,7 +159,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                                             </div>
                                             <div class="flex items-center space-x-2">
                                                 <?php if ($control['total_evidencias'] > 0): ?>
-                                                    <span class="text-xs text-green-600" title="Evidencias">
+                                                    <span class="text-xs text-green-600" title="Evidencias aprobadas">
                                                         <i class="fas fa-paperclip"></i> <?php echo $control['total_evidencias']; ?>
                                                     </span>
                                                 <?php endif; ?>
@@ -323,6 +328,24 @@ require_once __DIR__ . '/../components/sidebar.php';
     </div>
 </div>
 
+<style>
+/* Estilo para highlight animado */
+@keyframes highlightPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+    }
+}
+
+.requerimiento-highlight {
+    animation: highlightPulse 1.5s ease-in-out 3;
+    border-color: #3b82f6 !important;
+    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%) !important;
+}
+</style>
+
 <script>
 function abrirModalEditar(requerimientoId) {
     document.getElementById('modal-requerimiento-id').value = requerimientoId;
@@ -340,6 +363,38 @@ function toggleControles(id) {
     icon.classList.toggle('fa-chevron-down');
     icon.classList.toggle('fa-chevron-up');
 }
+
+// Sistema de scroll automático y highlight
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get('highlight');
+    
+    if (highlightId) {
+        // Buscar el elemento
+        const targetElement = document.getElementById(highlightId);
+        
+        if (targetElement) {
+            // Esperar a que se cargue completamente la página
+            setTimeout(function() {
+                // Scroll suave al elemento
+                targetElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                
+                // Agregar clase de highlight después del scroll
+                setTimeout(function() {
+                    targetElement.classList.add('requerimiento-highlight');
+                    
+                    // Remover highlight después de 5 segundos
+                    setTimeout(function() {
+                        targetElement.classList.remove('requerimiento-highlight');
+                    }, 5000);
+                }, 800);
+            }, 300);
+        }
+    }
+});
 </script>
 
 <?php require_once __DIR__ . '/../components/footer.php'; ?>

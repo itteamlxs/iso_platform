@@ -23,9 +23,14 @@ if (!$gap) {
     exit;
 }
 
-// Calcular avance automático basado en acciones
+// Calcular avance automático basado en acciones ACTIVAS
 $total_acciones = count($acciones);
-$acciones_completadas = count(array_filter($acciones, fn($a) => $a['estado'] === 'completada'));
+$acciones_completadas = 0;
+foreach ($acciones as $accion) {
+    if ($accion['estado'] === 'completada') {
+        $acciones_completadas++;
+    }
+}
 $avance_calculado = $total_acciones > 0 ? round(($acciones_completadas / $total_acciones) * 100) : 0;
 
 $prioridad_color = [
@@ -98,7 +103,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <div class="bg-blue-600 h-4 rounded-full transition-all" style="width: <?php echo $avance_calculado; ?>%"></div>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
-                            <i class="fas fa-info-circle mr-1"></i>Calculado automáticamente: <?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> acciones completadas
+                            <i class="fas fa-info-circle mr-1"></i>Calculado automáticamente: <?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> acciones completadas (solo acciones activas)
                         </p>
                     </div>
                 </div>
@@ -193,7 +198,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                             </p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-600">Total Acciones</p>
+                            <p class="text-xs text-gray-600">Total Acciones Activas</p>
                             <p class="text-sm font-medium text-gray-900"><?php echo $total_acciones; ?></p>
                         </div>
                         <div>
@@ -283,7 +288,7 @@ require_once __DIR__ . '/../components/sidebar.php';
 <div id="modal-eliminar" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
-        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción marcará el GAP y sus acciones como inactivas.</p>
+        <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción marcará el GAP y sus acciones como eliminadas.</p>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/eliminar">
             <input type="hidden" name="gap_id" id="modal-gap-id" value="">

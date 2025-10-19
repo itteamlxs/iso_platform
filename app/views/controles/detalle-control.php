@@ -96,9 +96,9 @@ require_once __DIR__ . '/../components/sidebar.php';
                                 <?php echo htmlspecialchars(substr($req['descripcion'], 0, 100)); ?>...
                             </p>
                         </div>
-                        <a href="<?php echo BASE_URL; ?>/public/requerimientos" 
-                           class="ml-4 text-blue-600 hover:text-blue-800 text-sm">
-                            <i class="fas fa-arrow-right"></i>
+                        <a href="<?php echo BASE_URL; ?>/public/requerimientos?highlight=req-<?php echo $req['id']; ?>" 
+                           class="ml-4 text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
+                            <i class="fas fa-arrow-right mr-1"></i>Ver Requerimiento
                         </a>
                     </div>
                     <?php endforeach; ?>

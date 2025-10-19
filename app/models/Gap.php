@@ -7,7 +7,7 @@ use PDO;
 /**
  * Gap Model
  * Gestión de análisis de brechas
- * VERSIÓN 2.0 - Optimizado con avance automático y soft delete en cascada
+ * VERSIÓN 3.0 - Con estado_accion para soft delete consistente
  */
 class Gap {
     
@@ -35,8 +35,8 @@ class Gap {
                         c.nombre as control,
                         cd.nombre as dominio,
                         s.id as soa_id,
-                        (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id AND estado != 'inactiva') as total_acciones,
-                        (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id AND estado = 'completada') as acciones_completadas
+                        (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id AND estado_accion = 'activo') as total_acciones,
+                        (SELECT COUNT(*) FROM acciones WHERE gap_id = g.id AND estado = 'completada' AND estado_accion = 'activo') as acciones_completadas
                     FROM gap_items g
                     INNER JOIN soa_entries s ON g.soa_id = s.id
                     INNER JOIN controles c ON s.control_id = c.id
@@ -132,7 +132,7 @@ class Gap {
     }
     
     /**
-     * Calcular avance automático basado en acciones
+     * Calcular avance automático basado en acciones ACTIVAS
      */
     private function calcularAvanceAutomatico($gap_id) {
         try {
@@ -140,7 +140,7 @@ class Gap {
                         COUNT(*) as total,
                         SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) as completadas
                     FROM acciones 
-                    WHERE gap_id = :gap_id AND estado != 'inactiva'";
+                    WHERE gap_id = :gap_id AND estado_accion = 'activo'";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':gap_id', $gap_id, PDO::PARAM_INT);
@@ -224,10 +224,10 @@ class Gap {
             $stmt_gap->execute();
             $gap_id = $this->db->lastInsertId();
             
-            // Crear acciones
+            // Crear acciones con estado_accion = 'activo' por defecto
             $sql_accion = "INSERT INTO acciones 
-                           (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado) 
-                           VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente')";
+                           (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado, estado_accion) 
+                           VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente', 'activo')";
             
             $fecha_inicio = date('Y-m-d');
             
@@ -291,7 +291,7 @@ class Gap {
     }
     
     /**
-     * Eliminar GAP (soft delete en cascada)
+     * Eliminar GAP (soft delete en cascada con estado_accion)
      */
     public function eliminar($gap_id) {
         try {
@@ -303,8 +303,8 @@ class Gap {
             $stmt_gap->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
             $stmt_gap->execute();
             
-            // Soft delete en cascada de acciones
-            $sql_acciones = "UPDATE acciones SET estado = 'inactiva' WHERE gap_id = :gap_id";
+            // Soft delete en cascada de acciones usando estado_accion
+            $sql_acciones = "UPDATE acciones SET estado_accion = 'eliminada' WHERE gap_id = :gap_id";
             $stmt_acciones = $this->db->prepare($sql_acciones);
             $stmt_acciones->bindValue(':gap_id', $gap_id, PDO::PARAM_INT);
             $stmt_acciones->execute();
@@ -321,12 +321,12 @@ class Gap {
     }
     
     /**
-     * Obtener acciones de un GAP (excluye inactivas)
+     * Obtener acciones de un GAP (excluye eliminadas)
      */
     public function getAcciones($gap_id) {
         try {
             $sql = "SELECT * FROM acciones 
-                    WHERE gap_id = :gap_id AND estado != 'inactiva'
+                    WHERE gap_id = :gap_id AND estado_accion = 'activo'
                     ORDER BY fecha_compromiso ASC";
             
             $stmt = $this->db->prepare($sql);
@@ -349,8 +349,8 @@ class Gap {
             $this->db->beginTransaction();
             
             $sql = "INSERT INTO acciones 
-                    (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado) 
-                    VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente')";
+                    (gap_id, descripcion, responsable, fecha_compromiso, fecha_inicio, estado, estado_accion) 
+                    VALUES (:gap_id, :descripcion, :responsable, :fecha_compromiso, :fecha_inicio, 'pendiente', 'activo')";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':gap_id', $datos['gap_id'], PDO::PARAM_INT);

@@ -1,7 +1,7 @@
 <?php
 /**
  * Procesar creación de GAP con acciones correctivas
- * VERSIÓN 2.0 - Validación mejorada y simplificada
+ * VERSIÓN 3.0 - Con validación de control aplicable
  */
 
 require_once __DIR__ . '/../models/Database.php';
@@ -58,7 +58,47 @@ if (count($acciones) === 0) {
     exit;
 }
 
-// Validación de aplicabilidad (ahora se hace en el modelo)
+// MEJORA: Validar que el control sea aplicable ANTES de crear el GAP
+try {
+    $db = \App\Models\Database::getInstance()->getConnection();
+    
+    $sql_check = "SELECT s.aplicable, c.codigo, c.nombre 
+                  FROM soa_entries s
+                  INNER JOIN controles c ON s.control_id = c.id
+                  WHERE s.control_id = :control_id 
+                  AND s.empresa_id = :empresa_id";
+    
+    $stmt_check = $db->prepare($sql_check);
+    $stmt_check->bindValue(':control_id', $datos['control_id'], PDO::PARAM_INT);
+    $stmt_check->bindValue(':empresa_id', $datos['empresa_id'], PDO::PARAM_INT);
+    $stmt_check->execute();
+    
+    $control_data = $stmt_check->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$control_data) {
+        $_SESSION['mensaje'] = 'Control no encontrado';
+        $_SESSION['mensaje_tipo'] = 'error';
+        header('Location: ' . BASE_URL . '/public/gap/crear');
+        exit;
+    }
+    
+    if ($control_data['aplicable'] == 0) {
+        $_SESSION['mensaje'] = 'No se puede crear GAP en controles NO APLICABLES. Control: ' . 
+                               $control_data['codigo'] . ' - ' . $control_data['nombre'];
+        $_SESSION['mensaje_tipo'] = 'error';
+        header('Location: ' . BASE_URL . '/public/gap/crear');
+        exit;
+    }
+    
+} catch (\Exception $e) {
+    error_log('Error en validación de control aplicable: ' . $e->getMessage());
+    $_SESSION['mensaje'] = 'Error al validar control: ' . $e->getMessage();
+    $_SESSION['mensaje_tipo'] = 'error';
+    header('Location: ' . BASE_URL . '/public/gap/crear');
+    exit;
+}
+
+// Validación de aplicabilidad exitosa, proceder a crear GAP
 $result = $controller->crearConAcciones($datos, $acciones);
 
 if ($result['success']) {

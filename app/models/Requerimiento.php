@@ -9,7 +9,7 @@ require_once __DIR__ . '/Database.php';
 /**
  * Requerimiento Model
  * Gestión de requerimientos base ISO 27001
- * VERSIÓN 2.0 - Con relación bidireccional a controles
+ * VERSIÓN 3.0 - Con validación de evidencias APROBADAS para completitud automática
  */
 class Requerimiento {
     
@@ -213,20 +213,23 @@ class Requerimiento {
     }
     
     /**
-     * Verificar si todos los controles asociados están implementados con evidencias
+     * Verificar si todos los controles asociados están implementados con evidencias APROBADAS
+     * MEJORA: Ahora valida que las evidencias estén en estado 'aprobada'
      */
     public function verificarCompletitudAutomatica($requerimiento_base_id, $empresa_id) {
         try {
             $sql = "SELECT 
-                        COUNT(*) as total_controles,
-                        SUM(CASE WHEN s.estado = 'implementado' THEN 1 ELSE 0 END) as implementados,
-                        SUM(CASE WHEN (SELECT COUNT(*) FROM evidencias e 
-                                       WHERE e.control_id = c.id 
-                                       AND e.empresa_id = :empresa_id_ev
-                                       AND e.estado_validacion = 'aprobada') > 0 THEN 1 ELSE 0 END) as con_evidencias
+                        COUNT(DISTINCT c.id) as total_controles,
+                        SUM(CASE WHEN s.estado = 'implementado' AND s.aplicable = 1 THEN 1 ELSE 0 END) as implementados,
+                        COUNT(DISTINCT CASE 
+                            WHEN e.estado_validacion = 'aprobada' AND s.aplicable = 1 
+                            THEN c.id 
+                            ELSE NULL 
+                        END) as con_evidencias_aprobadas
                     FROM requerimientos_controles rc
                     INNER JOIN controles c ON rc.control_id = c.id
                     INNER JOIN soa_entries s ON c.id = s.control_id
+                    LEFT JOIN evidencias e ON c.id = e.control_id AND e.empresa_id = :empresa_id_ev
                     WHERE rc.requerimiento_base_id = :req_id 
                     AND s.empresa_id = :empresa_id_soa
                     AND s.aplicable = 1";
@@ -239,9 +242,12 @@ class Requerimiento {
             
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
+            // CONDICIÓN MEJORADA: 
+            // 1. Todos los controles aplicables deben estar implementados
+            // 2. Todos los controles aplicables deben tener AL MENOS UNA evidencia aprobada
             if ($result['total_controles'] > 0 && 
                 $result['implementados'] == $result['total_controles'] &&
-                $result['con_evidencias'] == $result['total_controles']) {
+                $result['con_evidencias_aprobadas'] == $result['total_controles']) {
                 return true;
             }
             
