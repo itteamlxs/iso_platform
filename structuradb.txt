@@ -80,13 +80,15 @@ Registro de brechas identificadas en los controles.
 | brecha | TEXT | Descripción de la brecha |
 | objetivo | TEXT | Objetivo a alcanzar |
 | prioridad | ENUM | Prioridad: alta/media/baja |
-| avance | INT(11) | Porcentaje de avance (0-100) |
+| avance | INT(11) | Porcentaje de avance (0-100) calculado automáticamente |
 | fecha_estimada_cierre | DATE | Fecha estimada de cierre |
-| fecha_real_cierre | DATE | Fecha real de cierre |
+| fecha_real_cierre | DATE | Fecha real de cierre (automática al 100%) |
 | responsable | VARCHAR(100) | Persona responsable |
 | estado_gap | VARCHAR(20) DEFAULT 'activo' | Estado del GAP: activo/eliminado (soft delete) |
 
-### 6. **acciones**
+**Restricción:** Solo pueden crearse GAPs en controles con `aplicable = 1`
+
+### 6. **acciones** [ACTUALIZADA v3.0]
 Plan de acción para cerrar brechas.
 
 | Campo | Tipo | Descripción |
@@ -98,8 +100,14 @@ Plan de acción para cerrar brechas.
 | fecha_compromiso | DATE | Fecha comprometida |
 | fecha_inicio | DATE | Fecha de inicio real |
 | fecha_finalizacion | DATE | Fecha de finalización |
-| estado | ENUM | Estado: pendiente/en_progreso/completada |
+| estado | ENUM | Estado operativo: pendiente/en_progreso/completada |
+| estado_accion | ENUM | Estado de eliminación: activo/eliminada (soft delete) |
 | notas | TEXT | Notas adicionales |
+
+**Cambio importante:** 
+- Nueva columna `estado_accion` para soft delete consistente con `gap_items`
+- Columna `estado` ahora solo maneja estados operativos (eliminado 'inactiva')
+- Índice `idx_estado_accion` para optimizar queries
 
 ### 7. **evidencias**
 Evidencias de implementación de controles.
@@ -117,6 +125,8 @@ Evidencias de implementación de controles.
 | fecha_validacion | TIMESTAMP | Fecha de validación |
 | archivo | VARCHAR(255) | Ruta del archivo subido |
 | fecha_subida | TIMESTAMP | Fecha de subida |
+
+**Restricción:** Solo controles con `aplicable = 1` pueden tener evidencias
 
 ### 8. **tipos_evidencia**
 Catálogo de tipos de evidencias.
@@ -165,7 +175,12 @@ Relación entre empresas y requerimientos.
 | fecha_entrega | DATE | Fecha de entrega |
 | observaciones | TEXT | Observaciones |
 
-### 11. **requerimientos_controles**  [NUEVA]
+**Lógica de completitud automática:**
+- Se marca como 'completado' automáticamente cuando:
+  1. TODOS los controles asociados están en estado 'implementado'
+  2. CADA control tiene AL MENOS UNA evidencia con `estado_validacion = 'aprobada'`
+
+### 11. **requerimientos_controles**
 Relación entre requerimientos base y controles específicos.
 
 | Campo | Tipo | Descripción |
@@ -249,8 +264,8 @@ Registro de riesgos identificados.
 Resumen general del sistema:
 - Total de controles
 - Controles implementados vs no implementados
-- Gaps de alta prioridad
-- Acciones pendientes
+- Gaps de alta prioridad (solo activos)
+- Acciones pendientes (solo activas)
 
 ### 2. **view_dashboard_empresa**
 Resumen por empresa:
@@ -270,7 +285,7 @@ Estadísticas de evidencias por empresa:
 
 ### 5. **view_gap_avance_empresa**
 Estadísticas de brechas por empresa:
-- Total de gaps por prioridad
+- Total de gaps por prioridad (solo activos)
 - Promedio de avance
 
 ### 6. **view_requerimientos_empresa**
@@ -278,18 +293,19 @@ Estadísticas de requerimientos por empresa:
 - Completados, en proceso, pendientes
 - Porcentaje de completado
 
-### 7. **view_control_estado** [NUEVA]
+### 7. **view_control_estado**
 Estado de controles con conteo de evidencias:
 - Código y nombre del control
 - Estado actual
 - Número de evidencias asociadas
 
-### 8. **view_gap_prioridad** [NUEVA]
+### 8. **view_gap_prioridad**
 Gaps organizados por prioridad:
 - ID del gap
 - Código del control asociado
 - Descripción de la brecha
 - Prioridad y avance actual
+- **Filtro:** Solo GAPs con `estado_gap = 'activo'`
 
 ---
 
@@ -328,11 +344,13 @@ Se ejecuta automáticamente después de insertar una nueva empresa:
 ---
 
 ## **RELACIONES PRINCIPALES**
-
 ```
 empresas (1) ──── (N) soa_entries (N) ──── (1) controles
                         │
                         └─── (N) gap_items (1) ──── (N) acciones
+                        │         │                        │
+                        │         └─ estado_gap          └─ estado_accion
+                        │            (activo/eliminado)     (activo/eliminada)
                         │
                         └─── (N) evidencias
                         │
@@ -355,14 +373,15 @@ controles (N) ──── (1) controles_dominio
 - `controles_dominio.codigo` - Código único por dominio
 - `usuarios.email` - Email único por usuario
 - `uk_empresa_req` - Combinación única empresa + requerimiento
-- `uk_req_control` - Combinación única requerimiento_base + control [NUEVO]
+- `uk_req_control` - Combinación única requerimiento_base + control
 
 ### Índices de Rendimiento:
 - `idx_empresa_control` - Para búsquedas rápidas en soa_entries
 - `idx_soa` - Para comentarios de control
 - `idx_nombre`, `idx_ruc` - Para búsquedas de empresas
-- `idx_req_base` - Para requerimientos_controles [NUEVO]
-- `idx_control` - Para requerimientos_controles [NUEVO]
+- `idx_req_base` - Para requerimientos_controles
+- `idx_control` - Para requerimientos_controles
+- `idx_estado_accion` - Para filtrado eficiente de acciones activas [NUEVO]
 
 ---
 
@@ -370,25 +389,83 @@ controles (N) ──── (1) controles_dominio
 
 1. **Registro de Empresa:** Se crea empresa → Trigger crea automáticamente SOA entries y requerimientos
 2. **Evaluación de Controles:** Se evalúa cada control (implementado/parcial/no_implementado)
-3. **Identificación de Brechas:** Para controles no implementados, se crean gap_items (solo en controles aplicables)
+3. **Identificación de Brechas:** Para controles no implementados, se crean gap_items (SOLO en controles aplicables)
 4. **Plan de Acción:** Se definen acciones específicas para cerrar brechas
-5. **Evidencias:** Se suben evidencias de implementación
-6. **Seguimiento:** Se monitorea avance de gaps y acciones
-7. **Soft Delete:** Los GAPs eliminados cambian estado_gap a 'eliminado' pero permanecen en BD
-8. **Reportes:** Se generan vistas consolidados para dashboard
+5. **Cálculo Automático:** El avance del GAP se calcula automáticamente según acciones completadas
+6. **Evidencias:** Se suben evidencias de implementación (SOLO en controles aplicables)
+7. **Validación:** Evidencias se aprueban/rechazan
+8. **Completitud Automática:** Requerimientos se marcan como completados automáticamente cuando:
+   - Todos sus controles están implementados
+   - Todos tienen evidencias aprobadas
+9. **Seguimiento:** Se monitorea avance de gaps y acciones (solo activos)
+10. **Soft Delete:** GAPs y acciones eliminados permanecen en BD pero no afectan cálculos
+11. **Reportes:** Vistas y dashboard muestran solo registros activos
 
 ---
 
 ## **CAMBIOS RECIENTES**
 
-### Versión Actual:
-- **Nueva tabla:** `requerimientos_controles` - Relaciona requerimientos base con controles específicos (126 relaciones)
-- **Nuevas vistas:** `view_control_estado`, `view_gap_prioridad` - Para reportes mejorados
-- **gap_items.estado_gap:** Implementado soft delete con columna estado_gap (activo/eliminado)
-- **Filtro de aplicabilidad:** Los GAPs solo pueden crearse en controles con aplicable = 1
-- **Avance híbrido:** El avance puede ser manual o automático basado en acciones completadas
-- **Datos reales:** 93 controles, 7 requerimientos base, 126 relaciones entre ellos
+### Versión Actual (v3.1):
+
+#### **Migración BD (2025-01):**
+- **Nueva columna:** `acciones.estado_accion` ENUM('activo', 'eliminada')
+- **Modificado:** `acciones.estado` ahora solo ENUM('pendiente', 'en_progreso', 'completada')
+- **Eliminado:** Valor 'inactiva' del ENUM estado
+- **Nuevo índice:** `idx_estado_accion` en tabla acciones
+- **Backup:** Tabla `acciones_backup_migration` creada durante migración
+
+#### **Mejoras de Lógica:**
+- **GAPs:** Solo pueden crearse en controles con `aplicable = 1`
+- **Avance automático:** Se calcula SOLO con acciones donde `estado_accion = 'activo'`
+- **Soft delete consistente:** 
+  - `gap_items.estado_gap = 'eliminado'`
+  - `acciones.estado_accion = 'eliminada'`
+- **Completitud requerimientos:** Validación estricta en 3 pasos:
+  1. Verificar controles aplicables asociados
+  2. Validar TODOS en estado 'implementado'
+  3. Validar CADA UNO con evidencias `estado_validacion = 'aprobada'`
+
+#### **Mejoras UI/UX:**
+- Links directos desde controles a requerimientos con scroll automático
+- Highlight visual de 5 segundos en requerimientos
+- Dashboard filtra correctamente registros eliminados
+
+#### **Datos:**
+- 93 controles
+- 7 requerimientos base
+- 126 relaciones requerimientos-controles
+- Soft delete en cascada: GAP → Acciones
 
 ---
 
-Esta estructura permite un seguimiento completo del cumplimiento de controles de seguridad ISO, desde la evaluación inicial hasta el cierre de brechas, con capacidad de reporteo y auditoría integral.
+## **REGLAS DE NEGOCIO CRÍTICAS**
+
+1. **Control No Aplicable:**
+   - NO puede tener GAPs
+   - NO puede tener evidencias
+   - Justificación obligatoria
+
+2. **GAP Items:**
+   - Solo en controles aplicables
+   - Avance calculado automáticamente
+   - Soft delete en cascada a acciones
+   - Al 100% → `fecha_real_cierre` se registra automáticamente
+
+3. **Acciones:**
+   - Estados operativos independientes de eliminación lógica
+   - Solo acciones activas cuentan para avance
+   - Eliminadas permanecen en BD para auditoría
+
+4. **Requerimientos:**
+   - Completitud automática con validación estricta
+   - Requiere evidencias APROBADAS en TODOS los controles
+   - Evidencias pendientes/rechazadas NO cuentan
+
+5. **Dashboard:**
+   - Solo muestra GAPs con `estado_gap = 'activo'`
+   - Solo muestra acciones con `estado_accion = 'activo'`
+   - Estadísticas excluyen registros eliminados
+
+---
+
+Esta estructura permite un seguimiento completo del cumplimiento de controles de seguridad ISO, desde la evaluación inicial hasta el cierre de brechas, con capacidad de reporteo y auditoría integral, manteniendo integridad referencial mediante soft delete.
