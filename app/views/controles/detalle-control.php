@@ -71,7 +71,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-gray-700">
                         <i class="fas fa-link mr-2 text-blue-600"></i>
-                        Respaldado por Requerimientos Base (<?php echo count($requerimientos); ?>)
+                        Respalda a Requerimientos Base (<?php echo count($requerimientos); ?>)
                     </h3>
                     <button onclick="toggleSection('requerimientos-section')" 
                             class="text-xs text-blue-600 hover:text-blue-800">
@@ -103,12 +103,12 @@ require_once __DIR__ . '/../components/sidebar.php';
                     </div>
                     <?php endforeach; ?>
                     
-                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <div class="flex items-start space-x-2">
-                            <i class="fas fa-info-circle text-yellow-600 mt-1"></i>
-                            <div class="text-xs text-yellow-800">
-                                <p class="font-semibold mb-1">Nota importante:</p>
-                                <p>Este control está relacionado con los requerimientos base listados. Si completa alguno de esos requerimientos y lo aplica, este control puede ser marcado automáticamente como implementado.</p>
+                            <i class="fas fa-info-circle text-blue-600 mt-1"></i>
+                            <div class="text-xs text-blue-800">
+                                <p class="font-semibold mb-1">Relación bidireccional:</p>
+                                <p>Este control respalda los requerimientos listados arriba. Al implementar este control y subir evidencias aprobadas, contribuye automáticamente a completar esos requerimientos. Los requerimientos se marcarán como "Completado" cuando <strong>todos</strong> sus controles asociados estén implementados con evidencias aprobadas.</p>
                             </div>
                         </div>
                     </div>

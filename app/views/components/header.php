@@ -96,3 +96,48 @@ $usuario_iniciales = strtoupper(substr($usuario_nombre, 0, 1) . (strpos($usuario
         </div>
     </div>
 </header>
+
+<?php
+// Mostrar mensajes de sesión si existen
+if (isset($_SESSION['mensaje'])):
+    $tipo = $_SESSION['mensaje_tipo'] ?? 'info';
+    $colores = [
+        'success' => 'bg-green-50 border-green-500 text-green-800',
+        'error' => 'bg-red-50 border-red-500 text-red-800',
+        'warning' => 'bg-yellow-50 border-yellow-500 text-yellow-800',
+        'info' => 'bg-blue-50 border-blue-500 text-blue-800'
+    ];
+    $iconos = [
+        'success' => 'fa-check-circle',
+        'error' => 'fa-exclamation-circle',
+        'warning' => 'fa-exclamation-triangle',
+        'info' => 'fa-info-circle'
+    ];
+?>
+<div class="fixed top-20 right-6 z-50 max-w-md animate-slide-in">
+    <div class="<?php echo $colores[$tipo]; ?> border-l-4 rounded-lg shadow-lg p-4 flex items-start space-x-3">
+        <i class="fas <?php echo $iconos[$tipo]; ?> text-xl mt-0.5"></i>
+        <div class="flex-1">
+            <p class="text-sm font-medium"><?php echo $_SESSION['mensaje']; ?></p>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+<script>
+    // Auto-remover mensaje después de 5 segundos
+    setTimeout(function() {
+        const alert = document.querySelector('.animate-slide-in');
+        if (alert) {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateX(100%)';
+            setTimeout(() => alert.remove(), 300);
+        }
+    }, 5000);
+</script>
+<?php
+    unset($_SESSION['mensaje']);
+    unset($_SESSION['mensaje_tipo']);
+endif;
+?>
