@@ -2,6 +2,9 @@
 namespace App\Models;
 
 use PDO;
+use App\Helpers\Security;
+
+require_once __DIR__ . '/Database.php';
 
 /**
  * Usuario Model
@@ -39,7 +42,7 @@ class Usuario {
             }
             
             // Verificar contraseña
-            if (!\App\Helpers\Security::verifyPassword($password, $usuario['contrasena_hash'])) {
+            if (!Security::verifyPassword($password, $usuario['contrasena_hash'])) {
                 return [
                     'success' => false,
                     'error' => 'Credenciales inválidas'
@@ -99,7 +102,7 @@ class Usuario {
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':nombre', $datos['nombre'], PDO::PARAM_STR);
             $stmt->bindValue(':email', $datos['email'], PDO::PARAM_STR);
-            $stmt->bindValue(':password_hash', \App\Helpers\Security::hashPassword($datos['password']), PDO::PARAM_STR);
+            $stmt->bindValue(':password_hash', Security::hashPassword($datos['password']), PDO::PARAM_STR);
             $stmt->bindValue(':rol', $datos['rol'] ?? 'auditor', PDO::PARAM_STR);
             
             $stmt->execute();

@@ -5,6 +5,7 @@ use App\Models\Usuario;
 use App\Helpers\Security;
 
 require_once __DIR__ . '/../models/Usuario.php';
+require_once __DIR__ . '/../helpers/Security.php';
 
 /**
  * Auth Controller

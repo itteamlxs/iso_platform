@@ -1,19 +1,69 @@
-<!-- Usuario -->
-<div class="flex items-center space-x-3">
-    <div class="hidden md:block text-right">
-        <p class="text-sm font-medium text-gray-700"><?php echo $usuario_nombre; ?></p>
-        <p class="text-xs text-gray-500"><?php echo ucfirst(str_replace('_', ' ', $usuario_rol)); ?></p>
-    </div>
-    <div class="relative group">
-        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer">
-            <?php echo $usuario_iniciales; ?>
+<?php
+// Obtener datos del usuario autenticado
+$usuario_nombre = $_SESSION['usuario_nombre'] ?? 'Usuario';
+$usuario_rol = $_SESSION['usuario_rol'] ?? 'invitado';
+$usuario_email = $_SESSION['usuario_email'] ?? '';
+
+// Generar iniciales
+$nombres = explode(' ', $usuario_nombre);
+$usuario_iniciales = '';
+foreach ($nombres as $nombre) {
+    if (!empty($nombre)) {
+        $usuario_iniciales .= strtoupper(substr($nombre, 0, 1));
+        if (strlen($usuario_iniciales) >= 2) break;
+    }
+}
+if (empty($usuario_iniciales)) {
+    $usuario_iniciales = 'U';
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $page_title ?? 'ISO 27001 Platform'; ?></title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/css/views.css">
+</head>
+<body class="bg-gray-50">
+
+<!-- Header fijo -->
+<header class="header-fixed bg-white shadow-sm border-b border-gray-200">
+    <div class="h-full px-6 flex items-center justify-between">
+        
+        <!-- Título de sección -->
+        <div>
+            <h1 class="text-xl font-semibold text-gray-800"><?php echo $page_title ?? 'Dashboard'; ?></h1>
         </div>
-        <!-- Dropdown menu -->
-        <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-            <a href="<?php echo BASE_URL; ?>/public/logout" 
-               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
-                <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
-            </a>
+
+        <!-- Usuario -->
+        <div class="flex items-center space-x-3">
+            <div class="hidden md:block text-right">
+                <p class="text-sm font-medium text-gray-700"><?php echo htmlspecialchars($usuario_nombre); ?></p>
+                <p class="text-xs text-gray-500"><?php echo ucfirst(str_replace('_', ' ', $usuario_rol)); ?></p>
+            </div>
+            <div class="relative group">
+                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer">
+                    <?php echo $usuario_iniciales; ?>
+                </div>
+                <!-- Dropdown menu -->
+                <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <a href="<?php echo BASE_URL; ?>/public/logout" 
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+                    </a>
+                </div>
+            </div>
         </div>
+        
     </div>
-</div>
+</header>
