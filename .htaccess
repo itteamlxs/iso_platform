@@ -1,0 +1,26 @@
+# ISO 27001 Platform - .htaccess
+# Ubicación: /opt/lampp/htdocs/iso_platform/public/.htaccess
+
+# Activar RewriteEngine
+RewriteEngine On
+
+# Establecer base
+RewriteBase /iso_platform/public/
+
+# Si el archivo o directorio existe, servir directamente
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirigir todo a index.php
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Prevenir acceso a archivos sensibles
+<FilesMatch "\.(env|sql|log|md|json|lock|gitignore|htaccess|htpasswd|ini|bak|backup|old|tmp|temp)$">
+    Require all denied
+</FilesMatch>
+
+# Proteger contra directory listing
+Options -Indexes
+
+# Charset UTF-8
+AddDefaultCharset UTF-8

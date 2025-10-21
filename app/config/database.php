@@ -54,9 +54,9 @@ if (DEBUG_MODE) {
     ini_set('display_errors', 0);
 }
 
-// Sesiones
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
+// REMOVER configuración de sesiones (ya se hace en security.php)
+// ini_set('session.cookie_httponly', 1);
+// ini_set('session.use_only_cookies', 1);
 
 // Uploads
 define('UPLOAD_MAX_SIZE', (int)getenv('UPLOAD_MAX_SIZE'));

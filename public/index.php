@@ -2,9 +2,18 @@
 /**
  * Index.php - Router Principal
  * ISO 27001 Compliance Platform
+ * VERSIÓN 2.0 - Con autenticación y control de acceso
  */
 
-// Cargar configuración primero
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+
+// Cargar seguridad PRIMERO (ya inicia sesión)
+require_once __DIR__ . '/../app/config/security.php';
+
+// Cargar configuración de base de datos
 require_once __DIR__ . '/../app/config/database.php';
 
 // Autoload de Composer
@@ -13,8 +22,15 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // Cargar helpers
 require_once __DIR__ . '/../app/helpers/utils.php';
 
-// Iniciar sesión
-session_start();
+// Cargar middlewares
+require_once __DIR__ . '/../app/middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../app/middleware/RoleMiddleware.php';
+
+// Cargar AuthController
+require_once __DIR__ . '/../app/controllers/AuthController.php';
+
+use App\Middleware\AuthMiddleware;
+use App\Middleware\RoleMiddleware;
 
 // Capturar la ruta solicitada
 $request = $_SERVER['REQUEST_URI'];
@@ -23,11 +39,37 @@ $request = strtok($request, '?'); // Remover query strings
 
 // Manejo especial para descargar evidencias
 if (strpos($request, '/descargar-evidencia') === 0 && isset($_GET['file'])) {
+    AuthMiddleware::check($request); // Verificar autenticación
     require_once __DIR__ . '/descargar-evidencia.php';
     exit;
 }
 
-// Router básico - ORDEN IMPORTANTÍSIMO: específicas ANTES de genéricas
+// ==================== RUTAS DE AUTENTICACIÓN (SIN MIDDLEWARE) ====================
+
+if ($request === '/login') {
+    require_once __DIR__ . '/../app/views/login.php';
+    exit;
+}
+
+if ($request === '/auth/login') {
+    $authController = new \App\Controllers\AuthController();
+    $authController->login();
+    exit;
+}
+
+if ($request === '/logout') {
+    $authController = new \App\Controllers\AuthController();
+    $authController->logout();
+    exit;
+}
+
+// ==================== APLICAR MIDDLEWARES A TODAS LAS DEMÁS RUTAS ====================
+
+AuthMiddleware::check($request);
+RoleMiddleware::check($request);
+
+// ==================== ROUTER PRINCIPAL ====================
+
 switch (true) {
     case ($request === '/' || $request === '' || $request === '/dashboard'):
         require_once '../app/views/dashboard.php';
