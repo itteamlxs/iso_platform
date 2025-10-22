@@ -30,9 +30,21 @@ class AuthController {
         
         // Validar CSRF
         $csrf_token = $_POST[CSRF_TOKEN_NAME] ?? '';
+        
+        // DEBUG: Log para verificar tokens
+        error_log("=== DEBUG CSRF ===");
+        error_log("Token recibido: " . $csrf_token);
+        error_log("Token en sesión: " . ($_SESSION[CSRF_TOKEN_NAME] ?? 'NO EXISTE'));
+        error_log("Tiempo token: " . ($_SESSION[CSRF_TOKEN_NAME . '_time'] ?? 'NO EXISTE'));
+        
         if (!Security::validateCSRFToken($csrf_token)) {
             $_SESSION['mensaje'] = 'Token de seguridad inválido. Por favor, intente nuevamente.';
             $_SESSION['mensaje_tipo'] = 'error';
+            
+            // Regenerar token para el próximo intento
+            unset($_SESSION[CSRF_TOKEN_NAME]);
+            unset($_SESSION[CSRF_TOKEN_NAME . '_time']);
+            
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
@@ -98,6 +110,10 @@ class AuthController {
         $_SESSION['usuario_rol'] = $result['usuario']['rol'];
         $_SESSION['authenticated'] = true;
         $_SESSION['empresa_id'] = 1; // TODO: Cambiar cuando tengamos multi-empresa
+        
+        // IMPORTANTE: Regenerar token CSRF después de login exitoso
+        unset($_SESSION[CSRF_TOKEN_NAME]);
+        unset($_SESSION[CSRF_TOKEN_NAME . '_time']);
         
         // Manejar "recordar sesión" si está marcado
         if (isset($_POST['remember']) && $_POST['remember'] === 'on') {

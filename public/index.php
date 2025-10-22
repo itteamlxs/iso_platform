@@ -46,7 +46,12 @@ if (strpos($request, '/descargar-evidencia') === 0 && isset($_GET['file'])) {
 
 // ==================== RUTAS DE AUTENTICACIÓN (SIN MIDDLEWARE) ====================
 
-if ($request === '/login') {
+if ($request === '/login' || $request === '') {
+    // Limpiar mensaje de "debe iniciar sesión" si viene directo a login
+    if (isset($_SESSION['mensaje']) && $_SESSION['mensaje'] === 'Debe iniciar sesión para continuar') {
+        unset($_SESSION['mensaje']);
+        unset($_SESSION['mensaje_tipo']);
+    }
     require_once __DIR__ . '/../app/views/login.php';
     exit;
 }
@@ -71,7 +76,7 @@ RoleMiddleware::check($request);
 // ==================== ROUTER PRINCIPAL ====================
 
 switch (true) {
-    case ($request === '/' || $request === '' || $request === '/dashboard'):
+    case ($request === '/' || $request === '/dashboard'):
         require_once '../app/views/dashboard.php';
         break;
     
