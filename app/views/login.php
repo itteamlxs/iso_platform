@@ -1,14 +1,6 @@
 <?php
-// Cargar seguridad y configuración
-require_once __DIR__ . '/../../app/config/security.php';
-require_once __DIR__ . '/../../app/config/database.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
-
-// Cargar Security helper
-require_once __DIR__ . '/../../app/helpers/Security.php';
-
-// Cargar middleware
-require_once __DIR__ . '/../../app/middleware/AuthMiddleware.php';
+// La sesión ya está iniciada por security.php en index.php
+// Las configuraciones ya están cargadas por index.php
 
 use App\Middleware\AuthMiddleware;
 use App\Helpers\Security;

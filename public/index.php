@@ -14,7 +14,12 @@ require_once __DIR__ . '/../app/config/database.php';
 // Autoload de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Cargar modelos base
+require_once __DIR__ . '/../app/models/Database.php';
+require_once __DIR__ . '/../app/models/Usuario.php';
+
 // Cargar helpers
+require_once __DIR__ . '/../app/helpers/Security.php';
 require_once __DIR__ . '/../app/helpers/utils.php';
 
 // Cargar middlewares

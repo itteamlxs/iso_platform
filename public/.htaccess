@@ -23,50 +23,37 @@ RewriteRule ^(.*)$ index.php [QSA,L]
     Require all denied
 </FilesMatch>
 
-# Prevenir acceso a directorios sensibles
-RedirectMatch 403 ^/iso_platform/app/.*$
-RedirectMatch 403 ^/iso_platform/vendor/.*$
-RedirectMatch 403 ^/iso_platform/logs/.*$
-
 # Proteger contra directory listing
 Options -Indexes
 
-# Proteger contra inyección de NULL bytes
-<IfModule mod_rewrite.c>
-    RewriteCond %{QUERY_STRING} \0 [OR]
-    RewriteCond %{QUERY_STRING} \%00
-    RewriteRule .* - [F]
-</IfModule>
-
 # Bloquear acceso a archivos PHP en uploads
-<Directory "/opt/lampp/htdocs/iso_platform/public/uploads">
-    <FilesMatch "\.php$">
-        Require all denied
-    </FilesMatch>
-    php_flag engine off
-</Directory>
+<FilesMatch "^uploads/.*\.php$">
+    Require all denied
+</FilesMatch>
 
-# Headers de seguridad avanzados
+# Proteger contra inyección de NULL bytes
+RewriteCond %{QUERY_STRING} \0 [OR]
+RewriteCond %{QUERY_STRING} \%00
+RewriteRule .* - [F]
+
+# Bloquear scripts maliciosos
+RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+RewriteRule .* - [F]
+
+# Bloquear inyección SQL
+RewriteCond %{QUERY_STRING} (union.*select|insert.*into|drop.*table|delete.*from) [NC]
+RewriteRule .* - [F]
+
+# Headers de seguridad
 <IfModule mod_headers.c>
-    # Prevenir MIME sniffing
     Header set X-Content-Type-Options "nosniff"
-    
-    # Protección contra clickjacking
     Header set X-Frame-Options "SAMEORIGIN"
-    
-    # XSS Protection
     Header set X-XSS-Protection "1; mode=block"
-    
-    # Referrer Policy
     Header set Referrer-Policy "strict-origin-when-cross-origin"
-    
-    # Permissions Policy (antes Feature-Policy)
     Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    
-    # Content Security Policy
     Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self'"
-    
-    # Remover headers que revelan información del servidor
     Header unset X-Powered-By
     Header unset Server
 </IfModule>
@@ -89,36 +76,19 @@ Options -Indexes
     ExpiresByType application/pdf "access plus 1 month"
 </IfModule>
 
-# Prevenir hotlinking de imágenes
-<IfModule mod_rewrite.c>
-    RewriteCond %{HTTP_REFERER} !^$
-    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?localhost [NC]
-    RewriteCond %{HTTP_REFERER} !^https?://(www\.)?127\.0\.0\.1 [NC]
-    RewriteRule \.(jpg|jpeg|png|gif|svg)$ - [F,NC]
-</IfModule>
+# Prevenir hotlinking
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?localhost [NC]
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?127\.0\.0\.1 [NC]
+RewriteRule \.(jpg|jpeg|png|gif|svg)$ - [F,NC]
 
-# Limitar tamaño de request body (10MB)
-<IfModule mod_security.c>
-    SecRequestBodyLimit 10485760
-</IfModule>
-
-# Protección contra ataques de fuerza bruta (requiere mod_evasive)
-<IfModule mod_evasive20.c>
-    DOSHashTableSize 3097
-    DOSPageCount 5
-    DOSSiteCount 50
-    DOSPageInterval 1
-    DOSSiteInterval 1
-    DOSBlockingPeriod 60
-</IfModule>
-
-# Charset UTF-8 por defecto
+# Charset UTF-8
 AddDefaultCharset UTF-8
 
-# Deshabilitar la firma del servidor
+# Deshabilitar firma del servidor
 ServerSignature Off
 
-# Timeout de Keep-Alive
+# Keep-Alive
 <IfModule mod_headers.c>
     Header set Keep-Alive "timeout=5, max=100"
 </IfModule>
