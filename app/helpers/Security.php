@@ -5,6 +5,7 @@ namespace App\Helpers;
  * Security Helper
  * Funciones de seguridad centralizadas
  * ISO 27001 Compliance Platform
+ * VERSIÓN 2.1 - Rate limiting removido, validación de contraseña reforzada
  */
 class Security {
     
@@ -126,7 +127,42 @@ class Security {
                         break;
                     }
                 }
+                
+                // Password strength (8+ chars, 1 uppercase, 1 lowercase, 1 special)
+                if ($r === 'strong_password' && !empty($value)) {
+                    $passwordErrors = self::validatePasswordStrength($value);
+                    if (!empty($passwordErrors)) {
+                        $errors[$field] = implode(', ', $passwordErrors);
+                        break;
+                    }
+                }
             }
+        }
+        
+        return $errors;
+    }
+    
+    /**
+     * Validar fortaleza de contraseña
+     * Retorna array de errores (vacío si es válida)
+     */
+    public static function validatePasswordStrength($password) {
+        $errors = [];
+        
+        if (strlen($password) < 8) {
+            $errors[] = 'Mínimo 8 caracteres';
+        }
+        
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errors[] = 'Al menos 1 letra mayúscula';
+        }
+        
+        if (!preg_match('/[a-z]/', $password)) {
+            $errors[] = 'Al menos 1 letra minúscula';
+        }
+        
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+            $errors[] = 'Al menos 1 carácter especial (!@#$%^&*(),.?":{}|<>)';
         }
         
         return $errors;
@@ -219,6 +255,12 @@ class Security {
      * Hash de contraseña seguro
      */
     public static function hashPassword($password) {
+        // Validar fortaleza antes de hashear
+        $errors = self::validatePasswordStrength($password);
+        if (!empty($errors)) {
+            throw new \Exception('Contraseña no cumple los requisitos: ' . implode(', ', $errors));
+        }
+        
         // Usar ARGON2ID si está disponible, sino BCRYPT
         if (defined('PASSWORD_ARGON2ID')) {
             return password_hash($password, PASSWORD_ARGON2ID);
@@ -233,62 +275,6 @@ class Security {
      */
     public static function verifyPassword($password, $hash) {
         return password_verify($password, $hash);
-    }
-    
-    /**
-     * Rate limiting básico (login)
-     */
-    public static function checkRateLimit($identifier, $maxAttempts = MAX_LOGIN_ATTEMPTS, $lockoutTime = LOGIN_LOCKOUT_TIME) {
-        $key = 'rate_limit_' . md5($identifier);
-        
-        if (!isset($_SESSION[$key])) {
-            $_SESSION[$key] = [
-                'attempts' => 0,
-                'locked_until' => 0
-            ];
-        }
-        
-        // Si está bloqueado
-        if ($_SESSION[$key]['locked_until'] > time()) {
-            $remainingTime = $_SESSION[$key]['locked_until'] - time();
-            return [
-                'allowed' => false,
-                'message' => 'Demasiados intentos. Bloqueado por ' . ceil($remainingTime / 60) . ' minutos'
-            ];
-        }
-        
-        // Si el bloqueo expiró, resetear
-        if ($_SESSION[$key]['locked_until'] > 0 && $_SESSION[$key]['locked_until'] <= time()) {
-            $_SESSION[$key] = [
-                'attempts' => 0,
-                'locked_until' => 0
-            ];
-        }
-        
-        // Incrementar intentos
-        $_SESSION[$key]['attempts']++;
-        
-        // Si excede el límite
-        if ($_SESSION[$key]['attempts'] > $maxAttempts) {
-            $_SESSION[$key]['locked_until'] = time() + $lockoutTime;
-            return [
-                'allowed' => false,
-                'message' => 'Demasiados intentos. Bloqueado por ' . ($lockoutTime / 60) . ' minutos'
-            ];
-        }
-        
-        return [
-            'allowed' => true,
-            'attempts' => $_SESSION[$key]['attempts']
-        ];
-    }
-    
-    /**
-     * Resetear rate limit (tras login exitoso)
-     */
-    public static function resetRateLimit($identifier) {
-        $key = 'rate_limit_' . md5($identifier);
-        unset($_SESSION[$key]);
     }
     
     /**

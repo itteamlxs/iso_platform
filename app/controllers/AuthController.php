@@ -9,6 +9,7 @@ require_once __DIR__ . '/../models/Usuario.php';
 /**
  * Auth Controller
  * Maneja autenticación y autorización
+ * VERSIÓN 2.1 - Validación de contraseña reforzada, rate limiting removido
  */
 class AuthController {
     
@@ -30,12 +31,6 @@ class AuthController {
         
         // Validar CSRF
         $csrf_token = $_POST[CSRF_TOKEN_NAME] ?? '';
-        
-        // DEBUG: Log para verificar tokens
-        error_log("=== DEBUG CSRF ===");
-        error_log("Token recibido: " . $csrf_token);
-        error_log("Token en sesión: " . ($_SESSION[CSRF_TOKEN_NAME] ?? 'NO EXISTE'));
-        error_log("Tiempo token: " . ($_SESSION[CSRF_TOKEN_NAME . '_time'] ?? 'NO EXISTE'));
         
         if (!Security::validateCSRFToken($csrf_token)) {
             $_SESSION['mensaje'] = 'Token de seguridad inválido. Por favor, intente nuevamente.';
@@ -61,18 +56,30 @@ class AuthController {
             exit;
         }
         
-        // Validación adicional de contraseña
-        if (strlen($password) < 6) {
-            $_SESSION['mensaje'] = 'La contraseña debe tener al menos 6 caracteres';
+        // Validación estricta de contraseña
+        if (strlen($password) < 8) {
+            $_SESSION['mensaje'] = 'La contraseña debe tener al menos 8 caracteres';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
         
-        // Rate limiting
-        $rateLimit = Security::checkRateLimit($identifier);
-        if (!$rateLimit['allowed']) {
-            $_SESSION['mensaje'] = $rateLimit['message'];
+        if (!preg_match('/[A-Z]/', $password)) {
+            $_SESSION['mensaje'] = 'La contraseña debe contener al menos una letra mayúscula';
+            $_SESSION['mensaje_tipo'] = 'error';
+            header('Location: ' . BASE_URL . '/public/login');
+            exit;
+        }
+        
+        if (!preg_match('/[a-z]/', $password)) {
+            $_SESSION['mensaje'] = 'La contraseña debe contener al menos una letra minúscula';
+            $_SESSION['mensaje_tipo'] = 'error';
+            header('Location: ' . BASE_URL . '/public/login');
+            exit;
+        }
+        
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+            $_SESSION['mensaje'] = 'La contraseña debe contener al menos un carácter especial (!@#$%^&*(),.?":{}|<>)';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
             exit;
@@ -84,22 +91,11 @@ class AuthController {
         if (!$result['success']) {
             $_SESSION['mensaje'] = $result['error'];
             $_SESSION['mensaje_tipo'] = 'error';
-            
-            // Mostrar intentos restantes si hay rate limiting activo
-            if (isset($rateLimit['attempts']) && $rateLimit['attempts'] > 0) {
-                $intentosRestantes = MAX_LOGIN_ATTEMPTS - $rateLimit['attempts'];
-                if ($intentosRestantes > 0) {
-                    $_SESSION['mensaje'] .= " (Intentos restantes: $intentosRestantes)";
-                }
-            }
-            
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
         
-        // Login exitoso - Resetear rate limit
-        Security::resetRateLimit($identifier);
-        
+        // Login exitoso
         // Regenerar session_id por seguridad
         session_regenerate_id(true);
         

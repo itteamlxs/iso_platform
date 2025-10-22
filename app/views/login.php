@@ -241,7 +241,19 @@ $csrf_token = Security::generateCSRFToken();
                     <div id="password-requirements" class="mt-3 space-y-1 text-xs hidden">
                         <div id="req-length" class="flex items-center space-x-2 text-gray-500">
                             <i class="fas fa-circle text-xs"></i>
-                            <span>Mínimo 6 caracteres</span>
+                            <span>Mínimo 8 caracteres</span>
+                        </div>
+                        <div id="req-uppercase" class="flex items-center space-x-2 text-gray-500">
+                            <i class="fas fa-circle text-xs"></i>
+                            <span>Al menos 1 letra mayúscula</span>
+                        </div>
+                        <div id="req-lowercase" class="flex items-center space-x-2 text-gray-500">
+                            <i class="fas fa-circle text-xs"></i>
+                            <span>Al menos 1 letra minúscula</span>
+                        </div>
+                        <div id="req-special" class="flex items-center space-x-2 text-gray-500">
+                            <i class="fas fa-circle text-xs"></i>
+                            <span>Al menos 1 carácter especial (!@#$%^&*)</span>
                         </div>
                     </div>
                 </div>
@@ -307,6 +319,9 @@ $csrf_token = Security::generateCSRFToken();
         const strengthBar = document.getElementById('strength-bar');
         const passwordRequirements = document.getElementById('password-requirements');
         const reqLength = document.getElementById('req-length');
+        const reqUppercase = document.getElementById('req-uppercase');
+        const reqLowercase = document.getElementById('req-lowercase');
+        const reqSpecial = document.getElementById('req-special');
 
         // ========== FUNCIONES DE VALIDACIÓN ==========
         
@@ -375,13 +390,13 @@ $csrf_token = Security::generateCSRFToken();
         function calculatePasswordStrength(password) {
             let strength = 0;
             
-            if (password.length >= 6) strength++;
-            if (password.length >= 10) strength++;
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
             if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
             if (/\d/.test(password)) strength++;
-            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
             
-            return Math.min(strength, 3); // 0: nada, 1: débil, 2: media, 3: fuerte
+            return Math.min(strength, 3);
         }
 
         // Validar contraseña
@@ -400,8 +415,8 @@ $csrf_token = Security::generateCSRFToken();
             
             passwordRequirements.classList.remove('hidden');
             
-            // Validar longitud mínima
-            if (value.length >= 6) {
+            // Validar longitud mínima (8 caracteres)
+            if (value.length >= 8) {
                 reqLength.classList.remove('text-gray-500');
                 reqLength.classList.add('text-green-600');
                 reqLength.querySelector('i').classList.remove('fa-circle');
@@ -413,16 +428,68 @@ $csrf_token = Security::generateCSRFToken();
                 reqLength.querySelector('i').classList.add('fa-circle');
             }
             
+            // Validar mayúscula
+            if (/[A-Z]/.test(value)) {
+                reqUppercase.classList.remove('text-gray-500');
+                reqUppercase.classList.add('text-green-600');
+                reqUppercase.querySelector('i').classList.remove('fa-circle');
+                reqUppercase.querySelector('i').classList.add('fa-check-circle');
+            } else {
+                reqUppercase.classList.remove('text-green-600');
+                reqUppercase.classList.add('text-gray-500');
+                reqUppercase.querySelector('i').classList.remove('fa-check-circle');
+                reqUppercase.querySelector('i').classList.add('fa-circle');
+            }
+            
+            // Validar minúscula
+            if (/[a-z]/.test(value)) {
+                reqLowercase.classList.remove('text-gray-500');
+                reqLowercase.classList.add('text-green-600');
+                reqLowercase.querySelector('i').classList.remove('fa-circle');
+                reqLowercase.querySelector('i').classList.add('fa-check-circle');
+            } else {
+                reqLowercase.classList.remove('text-green-600');
+                reqLowercase.classList.add('text-gray-500');
+                reqLowercase.querySelector('i').classList.remove('fa-check-circle');
+                reqLowercase.querySelector('i').classList.add('fa-circle');
+            }
+            
+            // Validar carácter especial
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+                reqSpecial.classList.remove('text-gray-500');
+                reqSpecial.classList.add('text-green-600');
+                reqSpecial.querySelector('i').classList.remove('fa-circle');
+                reqSpecial.querySelector('i').classList.add('fa-check-circle');
+            } else {
+                reqSpecial.classList.remove('text-green-600');
+                reqSpecial.classList.add('text-gray-500');
+                reqSpecial.querySelector('i').classList.remove('fa-check-circle');
+                reqSpecial.querySelector('i').classList.add('fa-circle');
+            }
+            
             // Calcular fortaleza
             const strength = calculatePasswordStrength(value);
             
-            if (value.length < 6) {
+            // Validar requisitos mínimos
+            const hasMinLength = value.length >= 8;
+            const hasUppercase = /[A-Z]/.test(value);
+            const hasLowercase = /[a-z]/.test(value);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+            
+            if (!hasMinLength || !hasUppercase || !hasLowercase || !hasSpecial) {
                 passwordInput.classList.add('input-error');
                 passwordInput.classList.remove('input-default');
                 
                 passwordFeedback.classList.remove('hidden', 'text-green-600');
                 passwordFeedback.classList.add('text-red-600', 'slide-down');
-                passwordMessage.textContent = 'La contraseña debe tener al menos 6 caracteres';
+                
+                let missing = [];
+                if (!hasMinLength) missing.push('8 caracteres');
+                if (!hasUppercase) missing.push('1 mayúscula');
+                if (!hasLowercase) missing.push('1 minúscula');
+                if (!hasSpecial) missing.push('1 carácter especial');
+                
+                passwordMessage.textContent = 'Falta: ' + missing.join(', ');
                 
                 return false;
             } else {
@@ -499,6 +566,8 @@ $csrf_token = Security::generateCSRFToken();
             isSubmitting = true;
         });
     </script>
-
 </body>
+
+    <script src="/iso_platform/public/js/ddos-protection.js"></script>
+
 </html>

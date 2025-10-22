@@ -33,6 +33,10 @@ if (empty($usuario_iniciales)) {
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/css/style.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/public/css/views.css">
+    
+    <!-- Security JS - Rate Limiter & DDoS Protection -->
+    <script src="<?php echo BASE_URL; ?>/public/js/rate-limiter.js"></script>
+    <script src="<?php echo BASE_URL; ?>/public/js/ddos-protection.js"></script>
 </head>
 <body class="bg-gray-50">
 
@@ -92,24 +96,44 @@ if (empty($usuario_iniciales)) {
 </header>
 
 <script>
-// Toggle del menú de usuario
-const userButton = document.getElementById('user-menu-button');
-const userDropdown = document.getElementById('user-menu-dropdown');
-
-userButton.addEventListener('click', function(e) {
-    e.stopPropagation();
-    userDropdown.classList.toggle('hidden');
-});
-
-// Cerrar dropdown al hacer click fuera
-document.addEventListener('click', function(e) {
-    if (!userButton.contains(e.target) && !userDropdown.contains(e.target)) {
-        userDropdown.classList.add('hidden');
+// ========== INICIALIZAR PROTECCIÓN DDOS GLOBAL ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar protección DDoS con configuración personalizada
+    const ddosProtection = new DDoSProtection({
+        maxRequests: 20,      // Máximo 20 peticiones
+        timeWindow: 60,       // En 60 segundos
+        blockDuration: 5,     // Bloquear por 5 minutos
+        trackRefresh: true,   // Monitorear refresh
+        trackClicks: true,    // Monitorear clicks
+        showWarning: true     // Mostrar advertencias
+    });
+    
+    // Exponer globalmente para debugging (solo desarrollo)
+    if (typeof window !== 'undefined') {
+        window.ddosProtection = ddosProtection;
     }
 });
 
-// Prevenir que el dropdown se cierre al hacer click dentro de él
-userDropdown.addEventListener('click', function(e) {
-    e.stopPropagation();
-});
+// ========== DROPDOWN USUARIO ==========
+const userButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-menu-dropdown');
+
+if (userButton && userDropdown) {
+    userButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar dropdown al hacer click fuera
+    document.addEventListener('click', function(e) {
+        if (!userButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+
+    // Prevenir que el dropdown se cierre al hacer click dentro de él
+    userDropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+}
 </script>
