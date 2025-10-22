@@ -5,11 +5,6 @@
  * VERSIÓN 2.0 - Con autenticación y control de acceso
  */
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-
-
 // Cargar seguridad PRIMERO (ya inicia sesión)
 require_once __DIR__ . '/../app/config/security.php';
 

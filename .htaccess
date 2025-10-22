@@ -1,26 +1,138 @@
-# ISO 27001 Platform - .htaccess
-# Ubicación: /opt/lampp/htdocs/iso_platform/public/.htaccess
+# ISO 27001 Platform - Root .htaccess
+# Ubicación: /opt/lampp/htdocs/iso_platform/.htaccess
+# Protección de archivos y directorios sensibles
 
-# Activar RewriteEngine
-RewriteEngine On
+# ============================================
+# PROTECCIÓN DE ARCHIVOS SENSIBLES
+# ============================================
 
-# Establecer base
-RewriteBase /iso_platform/public/
+# Denegar acceso a .env
+<Files ".env">
+    Require all denied
+</Files>
 
-# Si el archivo o directorio existe, servir directamente
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-
-# Redirigir todo a index.php
-RewriteRule ^(.*)$ index.php [QSA,L]
-
-# Prevenir acceso a archivos sensibles
-<FilesMatch "\.(env|sql|log|md|json|lock|gitignore|htaccess|htpasswd|ini|bak|backup|old|tmp|temp)$">
+# Denegar acceso a archivos de configuración
+<FilesMatch "^(composer\.(json|lock)|package\.(json|lock)|\.git.*|\.env.*|README\.md|LICENSE)$">
     Require all denied
 </FilesMatch>
 
-# Proteger contra directory listing
+# ============================================
+# PROTECCIÓN DE DIRECTORIOS
+# ============================================
+
+# Denegar acceso directo a /app/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^app/ - [F,L]
+</IfModule>
+
+# Denegar acceso directo a /vendor/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^vendor/ - [F,L]
+</IfModule>
+
+# Denegar acceso directo a /logs/
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^logs/ - [F,L]
+</IfModule>
+
+# ============================================
+# DIRECTORY LISTING
+# ============================================
+
+# Deshabilitar listado de directorios
 Options -Indexes
 
-# Charset UTF-8
+# ============================================
+# HEADERS DE SEGURIDAD GLOBALES
+# ============================================
+
+<IfModule mod_headers.c>
+    # Prevenir MIME sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Protección contra clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # XSS Protection
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Remover información del servidor
+    Header unset X-Powered-By
+    Header unset Server
+</IfModule>
+
+# ============================================
+# PROTECCIÓN CONTRA INYECCIONES
+# ============================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Bloquear NULL bytes
+    RewriteCond %{QUERY_STRING} \0 [OR]
+    RewriteCond %{QUERY_STRING} \%00
+    RewriteRule .* - [F]
+    
+    # Bloquear scripts maliciosos en query string
+    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+    RewriteRule .* - [F]
+    
+    # Bloquear intentos de inyección SQL
+    RewriteCond %{QUERY_STRING} (union.*select|insert.*into|drop.*table|delete.*from) [NC]
+    RewriteRule .* - [F]
+</IfModule>
+
+# ============================================
+# PROTECCIÓN DE ARCHIVOS PHP
+# ============================================
+
+# Solo permitir ejecución de PHP en /public/
+<FilesMatch "\.php$">
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{REQUEST_URI} !^/iso_platform/public/
+        RewriteRule .* - [F]
+    </IfModule>
+</FilesMatch>
+
+# ============================================
+# CHARSET Y SERVIDOR
+# ============================================
+
+# Charset UTF-8 por defecto
 AddDefaultCharset UTF-8
+
+# Deshabilitar firma del servidor
+ServerSignature Off
+
+# ============================================
+# COMPRESIÓN
+# ============================================
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# ============================================
+# REDIRECCIÓN A PUBLIC
+# ============================================
+
+# Redirigir todo el tráfico a /public/ (excepto archivos estáticos ya servidos)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Si no es un directorio o archivo existente
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    
+    # Y no está ya en /public/
+    RewriteCond %{REQUEST_URI} !^/iso_platform/public/
+    
+    # Redirigir a /public/
+    RewriteRule ^(.*)$ /iso_platform/public/$1 [L,QSA]
+</IfModule>
