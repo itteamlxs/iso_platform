@@ -31,34 +31,34 @@ class AuthController {
         // Validar CSRF
         $csrf_token = $_POST[CSRF_TOKEN_NAME] ?? '';
         if (!Security::validateCSRFToken($csrf_token)) {
-            $_SESSION['mensaje'] = 'Token de seguridad inválido';
+            $_SESSION['mensaje'] = 'Token de seguridad inválido. Por favor, intente nuevamente.';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
         
-        // Sanitizar entrada
-        $email = Security::sanitize($_POST['email'] ?? '', 'email');
+        // Obtener y sanitizar entrada (email o username)
+        $identifier = Security::sanitize($_POST['identifier'] ?? '', 'string');
         $password = $_POST['password'] ?? '';
         
-        // Validar campos
-        $errors = Security::validate([
-            'email' => $email,
-            'password' => $password
-        ], [
-            'email' => 'required|email',
-            'password' => 'required|min:6'
-        ]);
+        // Validar campos vacíos
+        if (empty($identifier) || empty($password)) {
+            $_SESSION['mensaje'] = 'Por favor, complete todos los campos';
+            $_SESSION['mensaje_tipo'] = 'error';
+            header('Location: ' . BASE_URL . '/public/login');
+            exit;
+        }
         
-        if (!empty($errors)) {
-            $_SESSION['mensaje'] = implode('<br>', $errors);
+        // Validación adicional de contraseña
+        if (strlen($password) < 6) {
+            $_SESSION['mensaje'] = 'La contraseña debe tener al menos 6 caracteres';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
         
         // Rate limiting
-        $rateLimit = Security::checkRateLimit($email);
+        $rateLimit = Security::checkRateLimit($identifier);
         if (!$rateLimit['allowed']) {
             $_SESSION['mensaje'] = $rateLimit['message'];
             $_SESSION['mensaje_tipo'] = 'error';
@@ -66,18 +66,27 @@ class AuthController {
             exit;
         }
         
-        // Intentar autenticar
-        $result = $this->model->authenticate($email, $password);
+        // Intentar autenticar (ahora acepta email o username)
+        $result = $this->model->authenticate($identifier, $password);
         
         if (!$result['success']) {
             $_SESSION['mensaje'] = $result['error'];
             $_SESSION['mensaje_tipo'] = 'error';
+            
+            // Mostrar intentos restantes si hay rate limiting activo
+            if (isset($rateLimit['attempts']) && $rateLimit['attempts'] > 0) {
+                $intentosRestantes = MAX_LOGIN_ATTEMPTS - $rateLimit['attempts'];
+                if ($intentosRestantes > 0) {
+                    $_SESSION['mensaje'] .= " (Intentos restantes: $intentosRestantes)";
+                }
+            }
+            
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
         
         // Login exitoso - Resetear rate limit
-        Security::resetRateLimit($email);
+        Security::resetRateLimit($identifier);
         
         // Regenerar session_id por seguridad
         session_regenerate_id(true);
@@ -90,11 +99,18 @@ class AuthController {
         $_SESSION['authenticated'] = true;
         $_SESSION['empresa_id'] = 1; // TODO: Cambiar cuando tengamos multi-empresa
         
+        // Manejar "recordar sesión" si está marcado
+        if (isset($_POST['remember']) && $_POST['remember'] === 'on') {
+            // Extender tiempo de sesión a 30 días
+            ini_set('session.cookie_lifetime', 2592000); // 30 días en segundos
+            ini_set('session.gc_maxlifetime', 2592000);
+        }
+        
         // Actualizar último acceso
         $this->model->actualizarUltimoAcceso($result['usuario']['id']);
         
         // Mensaje de bienvenida
-        $_SESSION['mensaje'] = 'Bienvenido, ' . $result['usuario']['nombre'];
+        $_SESSION['mensaje'] = '¡Bienvenido, ' . $result['usuario']['nombre'] . '!';
         $_SESSION['mensaje_tipo'] = 'success';
         
         // Redirigir al dashboard

@@ -16,37 +16,73 @@ class Usuario {
     }
     
     /**
-     * Autenticar usuario
+     * Autenticar usuario por email O username
      */
-    public function authenticate($email, $password) {
+    public function authenticate($identifier, $password) {
         try {
-            $sql = "SELECT id, nombre, email, contrasena_hash, rol 
-                    FROM usuarios 
-                    WHERE email = :email 
-                    LIMIT 1";
+            // Determinar si es email o username
+            $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+            
+            // LOG TEMPORAL - ELIMINAR EN PRODUCCIÓN
+            error_log("=== DEBUG LOGIN ===");
+            error_log("Identifier recibido: " . $identifier);
+            error_log("Es email: " . ($isEmail ? 'SI' : 'NO'));
+            
+            if ($isEmail) {
+                $sql = "SELECT id, nombre, email, contrasena_hash, rol 
+                        FROM usuarios 
+                        WHERE email = :identifier 
+                        LIMIT 1";
+            } else {
+                $sql = "SELECT id, nombre, email, contrasena_hash, rol 
+                        FROM usuarios 
+                        WHERE nombre = :identifier 
+                        LIMIT 1";
+            }
+            
+            // LOG TEMPORAL
+            error_log("SQL ejecutado: " . $sql);
+            error_log("Valor buscado: " . $identifier);
             
             $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+            $stmt->bindValue(':identifier', $identifier, PDO::PARAM_STR);
             $stmt->execute();
             
             $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
             
+            // LOG TEMPORAL
+            if ($usuario) {
+                error_log("Usuario encontrado: ID=" . $usuario['id'] . ", Nombre=" . $usuario['nombre']);
+            } else {
+                error_log("Usuario NO encontrado en BD");
+            }
+            
             if (!$usuario) {
                 return [
                     'success' => false,
-                    'error' => 'Credenciales inválidas'
+                    'error' => 'Usuario o contraseña incorrectos'
                 ];
             }
             
+            // LOG TEMPORAL - Hash
+            error_log("Hash en BD: " . substr($usuario['contrasena_hash'], 0, 20) . "...");
+            
             // Verificar contraseña
-            if (!\App\Helpers\Security::verifyPassword($password, $usuario['contrasena_hash'])) {
+            $passwordVerify = \App\Helpers\Security::verifyPassword($password, $usuario['contrasena_hash']);
+            
+            // LOG TEMPORAL
+            error_log("Password verify result: " . ($passwordVerify ? 'TRUE' : 'FALSE'));
+            
+            if (!$passwordVerify) {
                 return [
                     'success' => false,
-                    'error' => 'Credenciales inválidas'
+                    'error' => 'Usuario o contraseña incorrectos'
                 ];
             }
             
             // Autenticación exitosa
+            error_log("=== LOGIN EXITOSO ===");
+            
             return [
                 'success' => true,
                 'usuario' => [
