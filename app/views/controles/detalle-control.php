@@ -7,6 +7,9 @@ require_once __DIR__ . '/../../models/Control.php';
 require_once __DIR__ . '/../../models/Evidencia.php';
 require_once __DIR__ . '/../../controllers/ControlesController.php';
 require_once __DIR__ . '/../../controllers/EvidenciasController.php';
+require_once __DIR__ . '/../../helpers/Security.php';
+
+use App\Helpers\Security;
 
 // Obtener ID del control desde la URL
 $control_id = isset($control_id) ? $control_id : null;
@@ -44,7 +47,7 @@ require_once __DIR__ . '/../components/sidebar.php';
             <ol class="flex items-center space-x-2 text-sm text-gray-600">
                 <li><a href="<?php echo BASE_URL; ?>/public/controles" class="hover:text-blue-600">Controles</a></li>
                 <li><i class="fas fa-chevron-right text-xs"></i></li>
-                <li class="text-gray-900 font-medium"><?php echo $control['codigo']; ?></li>
+                <li class="text-gray-900 font-medium"><?php echo Security::sanitizeOutput($control['codigo']); ?></li>
             </ol>
         </nav>
 
@@ -54,14 +57,14 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
                         <span class="text-xs px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-semibold">
-                            <?php echo $control['codigo']; ?>
+                            <?php echo Security::sanitizeOutput($control['codigo']); ?>
                         </span>
                         <span class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-                            <?php echo htmlspecialchars($control['dominio']); ?>
+                            <?php echo Security::sanitizeOutput($control['dominio']); ?>
                         </span>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-900"><?php echo htmlspecialchars($control['nombre']); ?></h2>
-                    <p class="text-gray-600 mt-2"><?php echo htmlspecialchars($control['descripcion']); ?></p>
+                    <h2 class="text-2xl font-bold text-gray-900"><?php echo Security::sanitizeOutput($control['nombre']); ?></h2>
+                    <p class="text-gray-600 mt-2"><?php echo Security::sanitizeOutput($control['descripcion']); ?></p>
                 </div>
             </div>
             
@@ -71,7 +74,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-semibold text-gray-700">
                         <i class="fas fa-link mr-2 text-blue-600"></i>
-                        Respalda a Requerimientos Base (<?php echo count($requerimientos); ?>)
+                        Respalda a Requerimientos Base (<?php echo Security::sanitizeOutput(count($requerimientos)); ?>)
                     </h3>
                     <button onclick="toggleSection('requerimientos-section')" 
                             class="text-xs text-blue-600 hover:text-blue-800">
@@ -87,17 +90,17 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-1">
                                     <span class="text-xs px-2 py-1 bg-blue-600 text-white rounded font-semibold">
-                                        REQ-<?php echo str_pad($req['numero'], 2, '0', STR_PAD_LEFT); ?>
+                                        REQ-<?php echo Security::sanitizeOutput(str_pad($req['numero'], 2, '0', STR_PAD_LEFT)); ?>
                                     </span>
                                     <span class="text-sm font-medium text-gray-900">
-                                        <?php echo htmlspecialchars($req['identificador']); ?>
+                                        <?php echo Security::sanitizeOutput($req['identificador']); ?>
                                     </span>
                                 </div>
                                 <p class="text-xs text-gray-600 ml-14">
-                                    <?php echo htmlspecialchars(substr($req['descripcion'], 0, 100)); ?>...
+                                    <?php echo Security::sanitizeOutput(substr($req['descripcion'], 0, 100)); ?>...
                                 </p>
                             </div>
-                            <a href="<?php echo BASE_URL; ?>/public/requerimientos?highlight=req-<?php echo $req['id']; ?>" 
+                            <a href="<?php echo BASE_URL; ?>/public/requerimientos?highlight=req-<?php echo Security::sanitizeOutput($req['id']); ?>" 
                                class="ml-4 text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
                                 <i class="fas fa-arrow-right mr-1"></i>Ver Requerimiento
                             </a>
@@ -126,10 +129,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-6">Evaluación del Control</h3>
                     
-                    <form id="form-evaluacion" method="POST" action="<?php echo BASE_URL; ?>/public/controles/<?php echo $control['id']; ?>/actualizar">
-                        <?php echo \App\Helpers\Security::csrfField(); ?>
-                        <input type="hidden" name="soa_id" value="<?php echo $control['soa_id']; ?>">
-                        <input type="hidden" name="control_id" value="<?php echo $control['id']; ?>">
+                    <form id="form-evaluacion" method="POST" action="<?php echo BASE_URL; ?>/public/controles/<?php echo Security::sanitizeOutput($control['id']); ?>/actualizar">
+                        <?php echo Security::csrfField(); ?>
+                        <input type="hidden" name="soa_id" value="<?php echo Security::sanitizeOutput($control['soa_id']); ?>">
+                        <input type="hidden" name="control_id" value="<?php echo Security::sanitizeOutput($control['id']); ?>">
                         
                         <!-- Aplicabilidad -->
                         <div class="mb-6">
@@ -189,7 +192,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <label class="block text-sm font-medium text-gray-700 mb-2">Justificación de No Aplicabilidad</label>
                             <textarea name="justificacion" rows="4" 
                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-                                      placeholder="Explique por qué este control no aplica a su organización..."><?php echo htmlspecialchars($control['justificacion'] ?? ''); ?></textarea>
+                                      placeholder="Explique por qué este control no aplica a su organización..."><?php echo Security::sanitizeOutput($control['justificacion'] ?? ''); ?></textarea>
                         </div>
 
                         <!-- Botones -->
@@ -235,7 +238,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                         <?php if ($control['fecha_evaluacion']): ?>
                         <div>
                             <p class="text-xs text-gray-600">Última evaluación</p>
-                            <p class="text-sm text-gray-800"><?php echo date('d/m/Y', strtotime($control['fecha_evaluacion'])); ?></p>
+                            <p class="text-sm text-gray-800"><?php echo Security::sanitizeOutput(date('d/m/Y', strtotime($control['fecha_evaluacion']))); ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -244,8 +247,8 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <!-- Evidencias -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-4">Evidencias</h3>
-                    <p class="text-xs text-gray-600 mb-3"><?php echo $total_evidencias; ?> archivo<?php echo $total_evidencias != 1 ? 's' : ''; ?> adjunto<?php echo $total_evidencias != 1 ? 's' : ''; ?></p>
-                    <a href="<?php echo BASE_URL; ?>/public/evidencias/subir?control_id=<?php echo $control['id']; ?>"
+                    <p class="text-xs text-gray-600 mb-3"><?php echo Security::sanitizeOutput($total_evidencias); ?> archivo<?php echo $total_evidencias != 1 ? 's' : ''; ?> adjunto<?php echo $total_evidencias != 1 ? 's' : ''; ?></p>
+                    <a href="<?php echo BASE_URL; ?>/public/evidencias/subir?control_id=<?php echo Security::sanitizeOutput($control['id']); ?>"
                        class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition text-center">
                         <i class="fas fa-upload mr-2"></i>Subir Evidencia
                     </a>

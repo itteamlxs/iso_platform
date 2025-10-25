@@ -5,6 +5,9 @@ $page_title = 'Análisis de Brechas (GAP)';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Gap.php';
 require_once __DIR__ . '/../../controllers/GapController.php';
+require_once __DIR__ . '/../../helpers/Security.php';
+
+use App\Helpers\Security;
 
 // Obtener filtros
 $filtros = [
@@ -40,23 +43,23 @@ require_once __DIR__ . '/../components/sidebar.php';
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Total GAPs</p>
-                <p class="text-2xl font-bold text-gray-800"><?php echo $stats['total']; ?></p>
+                <p class="text-2xl font-bold text-gray-800"><?php echo Security::sanitizeOutput($stats['total']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Alta Prioridad</p>
-                <p class="text-2xl font-bold text-red-600"><?php echo $stats['alta']; ?></p>
+                <p class="text-2xl font-bold text-red-600"><?php echo Security::sanitizeOutput($stats['alta']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Media Prioridad</p>
-                <p class="text-2xl font-bold text-yellow-600"><?php echo $stats['media']; ?></p>
+                <p class="text-2xl font-bold text-yellow-600"><?php echo Security::sanitizeOutput($stats['media']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Baja Prioridad</p>
-                <p class="text-2xl font-bold text-blue-600"><?php echo $stats['baja']; ?></p>
+                <p class="text-2xl font-bold text-blue-600"><?php echo Security::sanitizeOutput($stats['baja']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Avance Promedio</p>
-                <p class="text-2xl font-bold text-green-600"><?php echo $stats['avance_promedio']; ?>%</p>
+                <p class="text-2xl font-bold text-green-600"><?php echo Security::sanitizeOutput($stats['avance_promedio']); ?>%</p>
             </div>
         </div>
 
@@ -116,10 +119,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                         <div class="flex-1">
                             <div class="flex items-center space-x-3 mb-2">
                                 <span class="text-xs px-3 py-1 rounded-full font-semibold <?php echo $badge_color[$gap['prioridad']]; ?>">
-                                    <?php echo strtoupper($gap['prioridad']); ?>
+                                    <?php echo Security::sanitizeOutput(strtoupper($gap['prioridad'])); ?>
                                 </span>
                                 <span class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full">
-                                    <?php echo $gap['codigo']; ?>
+                                    <?php echo Security::sanitizeOutput($gap['codigo']); ?>
                                 </span>
                                 <?php if ($es_cerrado): ?>
                                     <span class="text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full font-semibold">
@@ -127,15 +130,15 @@ require_once __DIR__ . '/../components/sidebar.php';
                                     </span>
                                 <?php endif; ?>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-1"><?php echo htmlspecialchars($gap['brecha']); ?></h3>
-                            <p class="text-sm text-gray-600 mb-2"><?php echo htmlspecialchars($gap['control']); ?></p>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-1"><?php echo Security::sanitizeOutput($gap['brecha']); ?></h3>
+                            <p class="text-sm text-gray-600 mb-2"><?php echo Security::sanitizeOutput($gap['control']); ?></p>
                             <?php if ($gap['objetivo']): ?>
                                 <p class="text-sm text-gray-700 mt-2">
-                                    <strong>Objetivo:</strong> <?php echo htmlspecialchars($gap['objetivo']); ?>
+                                    <strong>Objetivo:</strong> <?php echo Security::sanitizeOutput($gap['objetivo']); ?>
                                 </p>
                             <?php endif; ?>
                         </div>
-                        <a href="<?php echo BASE_URL; ?>/public/gap/<?php echo $gap['id']; ?>" 
+                        <a href="<?php echo BASE_URL; ?>/public/gap/<?php echo Security::sanitizeOutput($gap['id']); ?>" 
                            class="text-blue-600 hover:text-blue-800 ml-4">
                             <i class="fas fa-arrow-right"></i>
                         </a>
@@ -145,10 +148,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <div class="mb-4">
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-xs text-gray-600">Avance</span>
-                            <span class="text-xs font-semibold text-gray-900"><?php echo $gap['avance']; ?>%</span>
+                            <span class="text-xs font-semibold text-gray-900"><?php echo Security::sanitizeOutput($gap['avance']); ?>%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full transition-all" style="width: <?php echo $gap['avance']; ?>%"></div>
+                            <div class="bg-blue-600 h-2 rounded-full transition-all" style="width: <?php echo Security::sanitizeOutput($gap['avance']); ?>%"></div>
                         </div>
                     </div>
 
@@ -156,23 +159,23 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                             <p class="text-gray-600">Responsable</p>
-                            <p class="font-medium text-gray-900"><?php echo htmlspecialchars($gap['responsable'] ?? 'Sin asignar'); ?></p>
+                            <p class="font-medium text-gray-900"><?php echo Security::sanitizeOutput($gap['responsable'] ?? 'Sin asignar'); ?></p>
                         </div>
                         <div>
                             <p class="text-gray-600">Fecha compromiso</p>
                             <p class="font-medium text-gray-900">
-                                <?php echo $gap['fecha_estimada_cierre'] ? date('d/m/Y', strtotime($gap['fecha_estimada_cierre'])) : '-'; ?>
+                                <?php echo $gap['fecha_estimada_cierre'] ? Security::sanitizeOutput(date('d/m/Y', strtotime($gap['fecha_estimada_cierre']))) : '-'; ?>
                             </p>
                         </div>
                         <div>
                             <p class="text-gray-600">Acciones</p>
                             <p class="font-medium text-gray-900">
-                                <?php echo $gap['acciones_completadas']; ?>/<?php echo $gap['total_acciones']; ?>
+                                <?php echo Security::sanitizeOutput($gap['acciones_completadas']); ?>/<?php echo Security::sanitizeOutput($gap['total_acciones']); ?>
                             </p>
                         </div>
                         <div>
                             <p class="text-gray-600">Dominio</p>
-                            <p class="font-medium text-gray-900"><?php echo htmlspecialchars($gap['dominio']); ?></p>
+                            <p class="font-medium text-gray-900"><?php echo Security::sanitizeOutput($gap['dominio']); ?></p>
                         </div>
                     </div>
                 </div>

@@ -5,6 +5,9 @@ $page_title = 'Detalle GAP';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Gap.php';
 require_once __DIR__ . '/../../controllers/GapController.php';
+require_once __DIR__ . '/../../helpers/Security.php';
+
+use App\Helpers\Security;
 
 // Obtener ID del GAP
 $gap_id = isset($gap_id) ? $gap_id : null;
@@ -51,7 +54,7 @@ require_once __DIR__ . '/../components/sidebar.php';
             <ol class="flex items-center space-x-2 text-sm text-gray-600">
                 <li><a href="<?php echo BASE_URL; ?>/public/gap" class="hover:text-blue-600">GAP Analysis</a></li>
                 <li><i class="fas fa-chevron-right text-xs"></i></li>
-                <li class="text-gray-900 font-medium">GAP #<?php echo $gap['id']; ?></li>
+                <li class="text-gray-900 font-medium">GAP #<?php echo Security::sanitizeOutput($gap['id']); ?></li>
             </ol>
         </nav>
 
@@ -66,10 +69,10 @@ require_once __DIR__ . '/../components/sidebar.php';
                         <div class="flex-1">
                             <div class="flex items-center space-x-2 mb-3">
                                 <span class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-semibold">
-                                    <?php echo $gap['codigo']; ?>
+                                    <?php echo Security::sanitizeOutput($gap['codigo']); ?>
                                 </span>
                                 <span class="text-xs px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                    <?php echo htmlspecialchars($gap['dominio']); ?>
+                                    <?php echo Security::sanitizeOutput($gap['dominio']); ?>
                                 </span>
                                 <?php if ($avance_calculado >= 100): ?>
                                     <span class="text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full font-semibold">
@@ -77,19 +80,19 @@ require_once __DIR__ . '/../components/sidebar.php';
                                     </span>
                                 <?php endif; ?>
                             </div>
-                            <h2 class="text-xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($gap['control']); ?></h2>
+                            <h2 class="text-xl font-bold text-gray-900 mb-2"><?php echo Security::sanitizeOutput($gap['control']); ?></h2>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <h3 class="text-sm font-semibold text-gray-700 mb-2">Descripción de la Brecha</h3>
-                        <p class="text-gray-800"><?php echo nl2br(htmlspecialchars($gap['brecha'])); ?></p>
+                        <p class="text-gray-800"><?php echo Security::sanitizeOutput($gap['brecha']); ?></p>
                     </div>
 
                     <?php if ($gap['objetivo']): ?>
                     <div class="mb-4">
                         <h3 class="text-sm font-semibold text-gray-700 mb-2">Objetivo de Mejora</h3>
-                        <p class="text-gray-800"><?php echo nl2br(htmlspecialchars($gap['objetivo'])); ?></p>
+                        <p class="text-gray-800"><?php echo Security::sanitizeOutput($gap['objetivo']); ?></p>
                     </div>
                     <?php endif; ?>
 
@@ -97,13 +100,13 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <div class="mt-6">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-sm font-medium text-gray-700">Avance de Implementación</span>
-                            <span class="text-lg font-bold text-blue-600"><?php echo $avance_calculado; ?>%</span>
+                            <span class="text-lg font-bold text-blue-600"><?php echo Security::sanitizeOutput($avance_calculado); ?>%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-4">
-                            <div class="bg-blue-600 h-4 rounded-full transition-all" style="width: <?php echo $avance_calculado; ?>%"></div>
+                            <div class="bg-blue-600 h-4 rounded-full transition-all" style="width: <?php echo Security::sanitizeOutput($avance_calculado); ?>%"></div>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">
-                            <i class="fas fa-info-circle mr-1"></i>Calculado automáticamente: <?php echo $acciones_completadas; ?>/<?php echo $total_acciones; ?> acciones completadas (solo acciones activas)
+                            <i class="fas fa-info-circle mr-1"></i>Calculado automáticamente: <?php echo Security::sanitizeOutput($acciones_completadas); ?>/<?php echo Security::sanitizeOutput($total_acciones); ?> acciones completadas (solo acciones activas)
                         </p>
                     </div>
                 </div>
@@ -140,20 +143,20 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
-                                        <p class="text-sm font-medium text-gray-900 mb-2"><?php echo htmlspecialchars($accion['descripcion']); ?></p>
+                                        <p class="text-sm font-medium text-gray-900 mb-2"><?php echo Security::sanitizeOutput($accion['descripcion']); ?></p>
                                         <div class="flex items-center space-x-4 text-xs text-gray-600">
-                                            <span><i class="fas fa-user mr-1"></i><?php echo htmlspecialchars($accion['responsable'] ?? 'Sin asignar'); ?></span>
-                                            <span><i class="fas fa-calendar mr-1"></i><?php echo date('d/m/Y', strtotime($accion['fecha_compromiso'])); ?></span>
+                                            <span><i class="fas fa-user mr-1"></i><?php echo Security::sanitizeOutput($accion['responsable'] ?? 'Sin asignar'); ?></span>
+                                            <span><i class="fas fa-calendar mr-1"></i><?php echo Security::sanitizeOutput(date('d/m/Y', strtotime($accion['fecha_compromiso']))); ?></span>
                                         </div>
                                     </div>
                                     <div class="flex items-center space-x-2 ml-4">
                                         <span class="text-xs px-3 py-1 rounded-full font-semibold <?php echo $estado_color[$accion['estado']]; ?>">
-                                            <?php echo ucfirst(str_replace('_', ' ', $accion['estado'])); ?>
+                                            <?php echo Security::sanitizeOutput(ucfirst(str_replace('_', ' ', $accion['estado']))); ?>
                                         </span>
                                         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/accion/actualizar-estado" style="display: inline;">
-                                            <?php echo \App\Helpers\Security::csrfField(); ?>
-                                            <input type="hidden" name="accion_id" value="<?php echo $accion['id']; ?>">
-                                            <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
+                                            <?php echo Security::csrfField(); ?>
+                                            <input type="hidden" name="accion_id" value="<?php echo Security::sanitizeOutput($accion['id']); ?>">
+                                            <input type="hidden" name="gap_id" value="<?php echo Security::sanitizeOutput($gap['id']); ?>">
                                             <input type="hidden" name="nuevo_estado" value="<?php echo $siguiente_estado[$accion['estado']]; ?>">
                                             <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition">
                                                 <i class="fas fa-arrow-right mr-1"></i><?php echo $siguiente_label[$accion['estado']]; ?>
@@ -185,32 +188,32 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <p class="text-xs text-gray-600">Prioridad</p>
                             <span class="inline-block mt-1 text-xs px-3 py-1 rounded-full font-semibold 
                                 <?php echo ['alta' => 'bg-red-100 text-red-800', 'media' => 'bg-yellow-100 text-yellow-800', 'baja' => 'bg-blue-100 text-blue-800'][$gap['prioridad']]; ?>">
-                                <?php echo strtoupper($gap['prioridad']); ?>
+                                <?php echo Security::sanitizeOutput(strtoupper($gap['prioridad'])); ?>
                             </span>
                         </div>
                         <div>
                             <p class="text-xs text-gray-600">Responsable</p>
-                            <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($gap['responsable'] ?? 'Sin asignar'); ?></p>
+                            <p class="text-sm font-medium text-gray-900"><?php echo Security::sanitizeOutput($gap['responsable'] ?? 'Sin asignar'); ?></p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-600">Fecha Compromiso</p>
                             <p class="text-sm font-medium text-gray-900">
-                                <?php echo $gap['fecha_estimada_cierre'] ? date('d/m/Y', strtotime($gap['fecha_estimada_cierre'])) : 'No definida'; ?>
+                                <?php echo $gap['fecha_estimada_cierre'] ? Security::sanitizeOutput(date('d/m/Y', strtotime($gap['fecha_estimada_cierre']))) : 'No definida'; ?>
                             </p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-600">Total Acciones Activas</p>
-                            <p class="text-sm font-medium text-gray-900"><?php echo $total_acciones; ?></p>
+                            <p class="text-sm font-medium text-gray-900"><?php echo Security::sanitizeOutput($total_acciones); ?></p>
                         </div>
                         <div>
                             <p class="text-xs text-gray-600">Avance Automático</p>
-                            <p class="text-sm font-medium text-blue-600"><?php echo $avance_calculado; ?>%</p>
+                            <p class="text-sm font-medium text-blue-600"><?php echo Security::sanitizeOutput($avance_calculado); ?>%</p>
                         </div>
                         <?php if ($gap['fecha_real_cierre']): ?>
                         <div>
                             <p class="text-xs text-gray-600">Fecha Real de Cierre</p>
                             <p class="text-sm font-medium text-green-600">
-                                <?php echo date('d/m/Y', strtotime($gap['fecha_real_cierre'])); ?>
+                                <?php echo Security::sanitizeOutput(date('d/m/Y', strtotime($gap['fecha_real_cierre']))); ?>
                             </p>
                         </div>
                         <?php endif; ?>
@@ -221,11 +224,11 @@ require_once __DIR__ . '/../components/sidebar.php';
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-4">Acciones</h3>
                     <div class="space-y-2">
-                        <a href="<?php echo BASE_URL; ?>/public/gap/<?php echo $gap['id']; ?>/editar"
+                        <a href="<?php echo BASE_URL; ?>/public/gap/<?php echo Security::sanitizeOutput($gap['id']); ?>/editar"
                            class="block w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition text-center">
                             <i class="fas fa-edit mr-2"></i>Editar GAP
                         </a>
-                        <button onclick="confirmarEliminar(<?php echo $gap['id']; ?>)"
+                        <button onclick="confirmarEliminar(<?php echo Security::sanitizeOutput($gap['id']); ?>)"
                                 class="block w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition text-center">
                             <i class="fas fa-trash mr-2"></i>Eliminar GAP
                         </button>
@@ -249,8 +252,8 @@ require_once __DIR__ . '/../components/sidebar.php';
         <h3 class="text-xl font-bold text-gray-900 mb-6">Nueva Acción Correctiva</h3>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/accion/guardar">
-            <?php echo \App\Helpers\Security::csrfField(); ?>
-            <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
+            <?php echo Security::csrfField(); ?>
+            <input type="hidden" name="gap_id" value="<?php echo Security::sanitizeOutput($gap['id']); ?>">
             
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Descripción <span class="text-red-600">*</span></label>
@@ -293,7 +296,7 @@ require_once __DIR__ . '/../components/sidebar.php';
         <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción marcará el GAP y sus acciones como eliminadas.</p>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/eliminar">
-            <?php echo \App\Helpers\Security::csrfField(); ?>
+            <?php echo Security::csrfField(); ?>
             <input type="hidden" name="gap_id" id="modal-gap-id" value="">
             
             <div class="flex space-x-3">

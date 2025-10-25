@@ -5,6 +5,9 @@ $page_title = 'Controles ISO 27001';
 require_once __DIR__ . '/../../models/Database.php';
 require_once __DIR__ . '/../../models/Control.php';
 require_once __DIR__ . '/../../controllers/ControlesController.php';
+require_once __DIR__ . '/../../helpers/Security.php';
+
+use App\Helpers\Security;
 
 // Obtener filtros
 $filtros = [
@@ -35,23 +38,23 @@ require_once __DIR__ . '/../components/sidebar.php';
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Total</p>
-                <p class="text-2xl font-bold text-gray-800"><?php echo $stats['total']; ?></p>
+                <p class="text-2xl font-bold text-gray-800"><?php echo Security::sanitizeOutput($stats['total']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Implementados</p>
-                <p class="text-2xl font-bold text-green-600"><?php echo $stats['implementados']; ?></p>
+                <p class="text-2xl font-bold text-green-600"><?php echo Security::sanitizeOutput($stats['implementados']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">Parciales</p>
-                <p class="text-2xl font-bold text-yellow-600"><?php echo $stats['parciales']; ?></p>
+                <p class="text-2xl font-bold text-yellow-600"><?php echo Security::sanitizeOutput($stats['parciales']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">No Implementados</p>
-                <p class="text-2xl font-bold text-red-600"><?php echo $stats['no_implementados']; ?></p>
+                <p class="text-2xl font-bold text-red-600"><?php echo Security::sanitizeOutput($stats['no_implementados']); ?></p>
             </div>
             <div class="bg-white rounded-lg border border-gray-200 p-4">
                 <p class="text-sm text-gray-600">No Aplicables</p>
-                <p class="text-2xl font-bold text-gray-600"><?php echo $stats['no_aplicables']; ?></p>
+                <p class="text-2xl font-bold text-gray-600"><?php echo Security::sanitizeOutput($stats['no_aplicables']); ?></p>
             </div>
         </div>
 
@@ -65,8 +68,8 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <select name="dominio" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500">
                         <option value="">Todos</option>
                         <?php foreach ($dominios as $dominio): ?>
-                        <option value="<?php echo $dominio['id']; ?>" <?php echo $filtros['dominio'] == $dominio['id'] ? 'selected' : ''; ?>>
-                            <?php echo $dominio['codigo']; ?> - <?php echo htmlspecialchars($dominio['nombre']); ?>
+                        <option value="<?php echo Security::sanitizeOutput($dominio['id']); ?>" <?php echo $filtros['dominio'] == $dominio['id'] ? 'selected' : ''; ?>>
+                            <?php echo Security::sanitizeOutput($dominio['codigo']); ?> - <?php echo Security::sanitizeOutput($dominio['nombre']); ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
@@ -125,14 +128,14 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <?php foreach ($controles as $control): ?>
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-medium text-gray-900"><?php echo $control['codigo']; ?></span>
+                                    <span class="text-sm font-medium text-gray-900"><?php echo Security::sanitizeOutput($control['codigo']); ?></span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($control['nombre']); ?></p>
-                                    <p class="text-xs text-gray-500 mt-1"><?php echo htmlspecialchars(substr($control['descripcion'], 0, 80)); ?>...</p>
+                                    <p class="text-sm font-medium text-gray-900"><?php echo Security::sanitizeOutput($control['nombre']); ?></p>
+                                    <p class="text-xs text-gray-500 mt-1"><?php echo Security::sanitizeOutput(substr($control['descripcion'], 0, 80)); ?>...</p>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"><?php echo $control['dominio_codigo']; ?></span>
+                                    <span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"><?php echo Security::sanitizeOutput($control['dominio_codigo']); ?></span>
                                 </td>
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <?php if ($control['aplicable']): ?>
@@ -151,16 +154,16 @@ require_once __DIR__ . '/../components/sidebar.php';
                                     $badge_class = $badges[$control['estado']] ?? 'bg-gray-100 text-gray-800';
                                     ?>
                                     <span class="text-xs px-2 py-1 rounded-full <?php echo $badge_class; ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $control['estado'])); ?>
+                                        <?php echo Security::sanitizeOutput(ucfirst(str_replace('_', ' ', $control['estado']))); ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm text-gray-600">
-                                        <i class="fas fa-paperclip mr-1"></i><?php echo $control['total_evidencias']; ?>
+                                        <i class="fas fa-paperclip mr-1"></i><?php echo Security::sanitizeOutput($control['total_evidencias']); ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center whitespace-nowrap">
-                                    <a href="<?php echo BASE_URL; ?>/public/controles/<?php echo $control['id']; ?>" 
+                                    <a href="<?php echo BASE_URL; ?>/public/controles/<?php echo Security::sanitizeOutput($control['id']); ?>" 
                                        class="text-blue-600 hover:text-blue-800">
                                         <i class="fas fa-eye"></i> Ver
                                     </a>

@@ -2,6 +2,8 @@
 $page_title = 'Dashboard';
 require_once __DIR__ . '/components/header.php';
 require_once __DIR__ . '/components/sidebar.php';
+
+use App\Helpers\Security;
 ?>
 
 <!-- Contenido principal -->
