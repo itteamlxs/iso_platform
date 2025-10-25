@@ -2,6 +2,7 @@
 /**
  * Configuración de Seguridad
  * ISO 27001 Compliance Platform
+ * VERSIÓN 3.0 - Hardened Security
  */
 
 // Configuración de sesiones seguras
@@ -12,7 +13,13 @@ ini_set('session.cookie_samesite', 'Strict');
 // Habilitar cookie_secure si estamos en HTTPS
 if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
     ini_set('session.cookie_secure', 1);
+} elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+    // Para proxies/load balancers
+    ini_set('session.cookie_secure', 1);
 }
+
+// Prevenir session fixation
+ini_set('session.use_strict_mode', 1);
 
 // Timeout de sesión (30 minutos de inactividad)
 define('SESSION_TIMEOUT', 1800);
@@ -50,14 +57,15 @@ define('MIME_EXTENSION_MAP', [
     'image/jpeg' => ['jpg', 'jpeg']
 ]);
 
-// Headers de seguridad
+// Headers de seguridad mejorados
 define('SECURITY_HEADERS', [
     'X-Content-Type-Options' => 'nosniff',
-    'X-Frame-Options' => 'SAMEORIGIN',
+    'X-Frame-Options' => 'DENY',
     'X-XSS-Protection' => '1; mode=block',
     'Referrer-Policy' => 'strict-origin-when-cross-origin',
-    'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
-    'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self'"
+    'Permissions-Policy' => 'geolocation=(), microphone=(), camera=(), payment=(), usb=()',
+    'Content-Security-Policy' => "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload'
 ]);
 
 // Aplicar headers automáticamente
@@ -90,10 +98,13 @@ if (!isset($_SESSION['CREATED'])) {
 
 /**
  * Función helper para validar CSRF en controllers
- * Uso: validateCSRF() en cada controller POST
+ * MEJORADA: Validación más robusta y logging
+ * 
+ * @return bool
  */
 function validateCSRF() {
     require_once __DIR__ . '/../helpers/Security.php';
+    require_once __DIR__ . '/../helpers/Logger.php';
     
     $token = $_POST[CSRF_TOKEN_NAME] ?? '';
     
@@ -102,12 +113,12 @@ function validateCSRF() {
         $_SESSION['mensaje_tipo'] = 'error';
         
         // Log intento sospechoso
-        if (class_exists('\App\Helpers\Logger')) {
-            \App\Helpers\Logger::security('CSRF validation failed', [
-                'url' => $_SERVER['REQUEST_URI'] ?? 'unknown',
-                'method' => $_SERVER['REQUEST_METHOD'] ?? 'unknown'
-            ]);
-        }
+        \App\Helpers\Logger::security('CSRF validation failed', [
+            'url' => $_SERVER['REQUEST_URI'] ?? 'unknown',
+            'method' => $_SERVER['REQUEST_METHOD'] ?? 'unknown',
+            'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
+        ]);
         
         // Regenerar token
         unset($_SESSION[CSRF_TOKEN_NAME]);
@@ -118,3 +129,29 @@ function validateCSRF() {
     
     return true;
 }
+
+/**
+ * Verificar si la solicitud actual es HTTPS
+ * 
+ * @return bool
+ */
+function isSecureConnection() {
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        return true;
+    }
+    if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Forzar HTTPS en producción
+ * Descomenta para usar en producción
+ */
+/*
+if (!isSecureConnection() && php_sapi_name() !== 'cli') {
+    header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
+    exit;
+}
+*/
