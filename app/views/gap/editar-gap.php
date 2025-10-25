@@ -51,6 +51,7 @@ require_once __DIR__ . '/../components/sidebar.php';
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Editar GAP #<?php echo $gap['id']; ?></h2>
             
             <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/actualizar" id="form-editar-gap">
+                <?php echo \App\Helpers\Security::csrfField(); ?>
                 
                 <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
                 

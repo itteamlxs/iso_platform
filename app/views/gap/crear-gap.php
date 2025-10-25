@@ -32,6 +32,7 @@ require_once __DIR__ . '/../components/sidebar.php';
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Identificar Nueva Brecha</h2>
             
             <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/guardar" id="form-crear-gap">
+                <?php echo \App\Helpers\Security::csrfField(); ?>
                 
                 <!-- Seleccionar control -->
                 <div class="mb-6">

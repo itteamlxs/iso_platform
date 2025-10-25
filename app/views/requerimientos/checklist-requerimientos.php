@@ -147,7 +147,8 @@ require_once __DIR__ . '/../components/sidebar.php';
                             <div class="mt-4 border-t pt-4">
                                 <div class="flex items-center justify-between mb-3">
                                     <h4 class="text-sm font-semibold text-gray-700">
-                                        <i class="fas fa-link mr-2"></i>Controles Asociados (<?php echo count($controles); ?>)
+                                        <i class="fas fa-link mr-2 text-blue-600"></i>
+                                        Controles Asociados (<?php echo count($controles); ?>)
                                     </h4>
                                     <?php if (count($controles) > 0): ?>
                                     <button onclick="toggleControles('controles-<?php echo $req['id']; ?>')" 
@@ -305,6 +306,7 @@ require_once __DIR__ . '/../components/sidebar.php';
         <h3 class="text-xl font-bold text-gray-900 mb-6">Actualizar Requerimiento</h3>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/requerimientos/actualizar" id="form-actualizar">
+            <?php echo \App\Helpers\Security::csrfField(); ?>
             <input type="hidden" name="requerimiento_id" id="modal-requerimiento-id" value="">
             
             <div class="mb-4">

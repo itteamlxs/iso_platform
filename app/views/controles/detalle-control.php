@@ -80,28 +80,30 @@ require_once __DIR__ . '/../components/sidebar.php';
                     </button>
                 </div>
                 
-                <div id="requerimientos-section" class="space-y-2">
-                    <?php foreach ($requerimientos as $req): ?>
-                    <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-1">
-                                <span class="text-xs px-2 py-1 bg-blue-600 text-white rounded font-semibold">
-                                    REQ-<?php echo str_pad($req['numero'], 2, '0', STR_PAD_LEFT); ?>
-                                </span>
-                                <span class="text-sm font-medium text-gray-900">
-                                    <?php echo htmlspecialchars($req['identificador']); ?>
-                                </span>
+                <div id="requerimientos-section" class="hidden">
+                    <div class="grid grid-cols-1 gap-2 mb-3">
+                        <?php foreach ($requerimientos as $req): ?>
+                        <div class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="text-xs px-2 py-1 bg-blue-600 text-white rounded font-semibold">
+                                        REQ-<?php echo str_pad($req['numero'], 2, '0', STR_PAD_LEFT); ?>
+                                    </span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        <?php echo htmlspecialchars($req['identificador']); ?>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-600 ml-14">
+                                    <?php echo htmlspecialchars(substr($req['descripcion'], 0, 100)); ?>...
+                                </p>
                             </div>
-                            <p class="text-xs text-gray-600 ml-14">
-                                <?php echo htmlspecialchars(substr($req['descripcion'], 0, 100)); ?>...
-                            </p>
+                            <a href="<?php echo BASE_URL; ?>/public/requerimientos?highlight=req-<?php echo $req['id']; ?>" 
+                               class="ml-4 text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
+                                <i class="fas fa-arrow-right mr-1"></i>Ver Requerimiento
+                            </a>
                         </div>
-                        <a href="<?php echo BASE_URL; ?>/public/requerimientos?highlight=req-<?php echo $req['id']; ?>" 
-                           class="ml-4 text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
-                            <i class="fas fa-arrow-right mr-1"></i>Ver Requerimiento
-                        </a>
+                        <?php endforeach; ?>
                     </div>
-                    <?php endforeach; ?>
                     
                     <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <div class="flex items-start space-x-2">
@@ -125,6 +127,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                     <h3 class="text-lg font-semibold text-gray-900 mb-6">Evaluación del Control</h3>
                     
                     <form id="form-evaluacion" method="POST" action="<?php echo BASE_URL; ?>/public/controles/<?php echo $control['id']; ?>/actualizar">
+                        <?php echo \App\Helpers\Security::csrfField(); ?>
                         <input type="hidden" name="soa_id" value="<?php echo $control['soa_id']; ?>">
                         <input type="hidden" name="control_id" value="<?php echo $control['id']; ?>">
                         

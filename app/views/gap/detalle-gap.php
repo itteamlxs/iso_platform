@@ -151,6 +151,7 @@ require_once __DIR__ . '/../components/sidebar.php';
                                             <?php echo ucfirst(str_replace('_', ' ', $accion['estado'])); ?>
                                         </span>
                                         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/accion/actualizar-estado" style="display: inline;">
+                                            <?php echo \App\Helpers\Security::csrfField(); ?>
                                             <input type="hidden" name="accion_id" value="<?php echo $accion['id']; ?>">
                                             <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
                                             <input type="hidden" name="nuevo_estado" value="<?php echo $siguiente_estado[$accion['estado']]; ?>">
@@ -248,6 +249,7 @@ require_once __DIR__ . '/../components/sidebar.php';
         <h3 class="text-xl font-bold text-gray-900 mb-6">Nueva Acción Correctiva</h3>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/accion/guardar">
+            <?php echo \App\Helpers\Security::csrfField(); ?>
             <input type="hidden" name="gap_id" value="<?php echo $gap['id']; ?>">
             
             <div class="mb-4">
@@ -291,6 +293,7 @@ require_once __DIR__ . '/../components/sidebar.php';
         <p class="text-gray-700 mb-6">¿Está seguro de que desea eliminar este GAP? Esta acción marcará el GAP y sus acciones como eliminadas.</p>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/gap/eliminar">
+            <?php echo \App\Helpers\Security::csrfField(); ?>
             <input type="hidden" name="gap_id" id="modal-gap-id" value="">
             
             <div class="flex space-x-3">

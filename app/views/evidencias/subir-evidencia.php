@@ -41,6 +41,8 @@ require_once __DIR__ . '/../components/sidebar.php';
             
             <form method="POST" action="<?php echo BASE_URL; ?>/public/evidencias/procesar" enctype="multipart/form-data" id="form-subir-evidencia">
                 
+                <?php echo \App\Helpers\Security::csrfField(); ?>
+                
                 <!-- Seleccionar control -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -135,19 +137,3 @@ require_once __DIR__ . '/../components/sidebar.php';
                 </div>
 
             </form>
-        </div>
-
-    </div>
-</main>
-
-<script>
-function mostrarNombreArchivo(input) {
-    const nombreArchivo = document.getElementById('nombre-archivo');
-    if (input.files && input.files[0]) {
-        nombreArchivo.textContent = '✓ ' + input.files[0].name;
-        nombreArchivo.classList.remove('hidden');
-    }
-}
-</script>
-
-<?php require_once __DIR__ . '/../components/footer.php'; ?>

@@ -3,13 +3,17 @@ namespace App\Controllers;
 
 use App\Models\Usuario;
 use App\Helpers\Security;
+use App\Helpers\Logger;
+use App\Middleware\RateLimitMiddleware;
 
 require_once __DIR__ . '/../models/Usuario.php';
+require_once __DIR__ . '/../helpers/Logger.php';
+require_once __DIR__ . '/../middleware/RateLimitMiddleware.php';
 
 /**
  * Auth Controller
  * Maneja autenticación y autorización
- * VERSIÓN 2.1 - Validación de contraseña reforzada, rate limiting removido
+ * VERSIÓN 3.0 - Con rate limiting backend, logging y multi-empresa
  */
 class AuthController {
     
@@ -33,6 +37,10 @@ class AuthController {
         $csrf_token = $_POST[CSRF_TOKEN_NAME] ?? '';
         
         if (!Security::validateCSRFToken($csrf_token)) {
+            Logger::security('CSRF validation failed on login', [
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+            ]);
+            
             $_SESSION['mensaje'] = 'Token de seguridad inválido. Por favor, intente nuevamente.';
             $_SESSION['mensaje_tipo'] = 'error';
             
@@ -44,12 +52,32 @@ class AuthController {
             exit;
         }
         
+        // RATE LIMITING BACKEND
+        $identifier = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        
+        if (!RateLimitMiddleware::check('login', $identifier)) {
+            $blockInfo = RateLimitMiddleware::isBlocked('login', $identifier);
+            
+            Logger::security('Login rate limit exceeded', [
+                'ip' => $identifier,
+                'time_left' => $blockInfo['time_left']
+            ]);
+            
+            $_SESSION['mensaje'] = 'Demasiados intentos de login. Por favor, espere ' . $blockInfo['time_left'] . ' minuto(s).';
+            $_SESSION['mensaje_tipo'] = 'error';
+            header('Location: ' . BASE_URL . '/public/login');
+            exit;
+        }
+        
         // Obtener y sanitizar entrada (email o username)
         $identifier = Security::sanitize($_POST['identifier'] ?? '', 'string');
         $password = $_POST['password'] ?? '';
         
         // Validar campos vacíos
         if (empty($identifier) || empty($password)) {
+            RateLimitMiddleware::record('login', $identifier);
+            Logger::warning('Login attempt with empty fields');
+            
             $_SESSION['mensaje'] = 'Por favor, complete todos los campos';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
@@ -58,6 +86,7 @@ class AuthController {
         
         // Validación estricta de contraseña
         if (strlen($password) < 8) {
+            RateLimitMiddleware::record('login', $identifier);
             $_SESSION['mensaje'] = 'La contraseña debe tener al menos 8 caracteres';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
@@ -65,6 +94,7 @@ class AuthController {
         }
         
         if (!preg_match('/[A-Z]/', $password)) {
+            RateLimitMiddleware::record('login', $identifier);
             $_SESSION['mensaje'] = 'La contraseña debe contener al menos una letra mayúscula';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
@@ -72,6 +102,7 @@ class AuthController {
         }
         
         if (!preg_match('/[a-z]/', $password)) {
+            RateLimitMiddleware::record('login', $identifier);
             $_SESSION['mensaje'] = 'La contraseña debe contener al menos una letra minúscula';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
@@ -79,6 +110,7 @@ class AuthController {
         }
         
         if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+            RateLimitMiddleware::record('login', $identifier);
             $_SESSION['mensaje'] = 'La contraseña debe contener al menos un carácter especial (!@#$%^&*(),.?":{}|<>)';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
@@ -89,13 +121,22 @@ class AuthController {
         $result = $this->model->authenticate($identifier, $password);
         
         if (!$result['success']) {
+            RateLimitMiddleware::record('login', $identifier);
+            
+            Logger::auth('login', false, [
+                'identifier' => $identifier,
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+            ]);
+            
             $_SESSION['mensaje'] = $result['error'];
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
         
-        // Login exitoso
+        // Login exitoso - RESETEAR rate limit
+        RateLimitMiddleware::reset('login', $identifier);
+        
         // Regenerar session_id por seguridad
         session_regenerate_id(true);
         
@@ -105,7 +146,16 @@ class AuthController {
         $_SESSION['usuario_email'] = $result['usuario']['email'];
         $_SESSION['usuario_rol'] = $result['usuario']['rol'];
         $_SESSION['authenticated'] = true;
-        $_SESSION['empresa_id'] = 1; // TODO: Cambiar cuando tengamos multi-empresa
+        
+        // MULTI-EMPRESA: Obtener empresa_id del usuario
+        $_SESSION['empresa_id'] = $result['usuario']['empresa_id'] ?? null;
+        
+        Logger::auth('login', true, [
+            'user_id' => $result['usuario']['id'],
+            'email' => $result['usuario']['email'],
+            'rol' => $result['usuario']['rol'],
+            'empresa_id' => $_SESSION['empresa_id']
+        ]);
         
         // IMPORTANTE: Regenerar token CSRF después de login exitoso
         unset($_SESSION[CSRF_TOKEN_NAME]);
@@ -114,7 +164,7 @@ class AuthController {
         // Manejar "recordar sesión" si está marcado
         if (isset($_POST['remember']) && $_POST['remember'] === 'on') {
             // Extender tiempo de sesión a 30 días
-            ini_set('session.cookie_lifetime', 2592000); // 30 días en segundos
+            ini_set('session.cookie_lifetime', 2592000);
             ini_set('session.gc_maxlifetime', 2592000);
         }
         
@@ -136,6 +186,12 @@ class AuthController {
     public function logout() {
         // Guardar mensaje antes de destruir sesión
         $nombre = $_SESSION['usuario_nombre'] ?? 'Usuario';
+        $user_id = $_SESSION['usuario_id'] ?? null;
+        
+        Logger::auth('logout', true, [
+            'user_id' => $user_id,
+            'nombre' => $nombre
+        ]);
         
         // Destruir sesión
         session_unset();
@@ -173,7 +229,8 @@ class AuthController {
             'id' => $_SESSION['usuario_id'] ?? null,
             'nombre' => $_SESSION['usuario_nombre'] ?? null,
             'email' => $_SESSION['usuario_email'] ?? null,
-            'rol' => $_SESSION['usuario_rol'] ?? null
+            'rol' => $_SESSION['usuario_rol'] ?? null,
+            'empresa_id' => $_SESSION['empresa_id'] ?? null
         ];
     }
     
@@ -213,9 +270,32 @@ class AuthController {
         self::requireAuth();
         
         if (!self::hasRole($roles)) {
+            Logger::accessDenied('role_check', [
+                'required_roles' => is_array($roles) ? implode(',', $roles) : $roles,
+                'user_role' => $_SESSION['usuario_rol'] ?? 'none'
+            ]);
+            
             $_SESSION['mensaje'] = 'No tiene permisos para acceder a esta sección';
             $_SESSION['mensaje_tipo'] = 'error';
             header('Location: ' . BASE_URL . '/public/');
+            exit;
+        }
+    }
+    
+    /**
+     * Verificar que el usuario tenga empresa asignada
+     */
+    public static function requireEmpresa() {
+        self::requireAuth();
+        
+        if (empty($_SESSION['empresa_id'])) {
+            Logger::warning('User without empresa_id tried to access', [
+                'user_id' => $_SESSION['usuario_id'] ?? 'unknown'
+            ]);
+            
+            $_SESSION['mensaje'] = 'No tiene una empresa asignada. Contacte al administrador.';
+            $_SESSION['mensaje_tipo'] = 'error';
+            header('Location: ' . BASE_URL . '/public/login');
             exit;
         }
     }

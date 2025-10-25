@@ -9,8 +9,10 @@ ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
 ini_set('session.cookie_samesite', 'Strict');
 
-// Si estás en HTTPS, descomentar:
-// ini_set('session.cookie_secure', 1);
+// Habilitar cookie_secure si estamos en HTTPS
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('session.cookie_secure', 1);
+}
 
 // Timeout de sesión (30 minutos de inactividad)
 define('SESSION_TIMEOUT', 1800);
@@ -84,4 +86,35 @@ if (!isset($_SESSION['CREATED'])) {
 } elseif (time() - $_SESSION['CREATED'] > SESSION_REGENERATE_INTERVAL) {
     session_regenerate_id(true);
     $_SESSION['CREATED'] = time();
+}
+
+/**
+ * Función helper para validar CSRF en controllers
+ * Uso: validateCSRF() en cada controller POST
+ */
+function validateCSRF() {
+    require_once __DIR__ . '/../helpers/Security.php';
+    
+    $token = $_POST[CSRF_TOKEN_NAME] ?? '';
+    
+    if (!\App\Helpers\Security::validateCSRFToken($token)) {
+        $_SESSION['mensaje'] = 'Token de seguridad inválido. Intente nuevamente.';
+        $_SESSION['mensaje_tipo'] = 'error';
+        
+        // Log intento sospechoso
+        if (class_exists('\App\Helpers\Logger')) {
+            \App\Helpers\Logger::security('CSRF validation failed', [
+                'url' => $_SERVER['REQUEST_URI'] ?? 'unknown',
+                'method' => $_SERVER['REQUEST_METHOD'] ?? 'unknown'
+            ]);
+        }
+        
+        // Regenerar token
+        unset($_SESSION[CSRF_TOKEN_NAME]);
+        unset($_SESSION[CSRF_TOKEN_NAME . '_time']);
+        
+        return false;
+    }
+    
+    return true;
 }

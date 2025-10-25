@@ -215,6 +215,7 @@ require_once __DIR__ . '/../components/sidebar.php';
         <h3 class="text-xl font-bold text-gray-900 mb-4">Validar Evidencia</h3>
         
         <form method="POST" action="<?php echo BASE_URL; ?>/public/evidencias/validar">
+            <?php echo \App\Helpers\Security::csrfField(); ?>
             <input type="hidden" name="evidencia_id" id="modal-evidencia-id" value="">
             
             <div class="mb-4">
@@ -260,12 +261,18 @@ function confirmarEliminar(evidenciaId) {
         form.method = 'POST';
         form.action = '<?php echo BASE_URL; ?>/public/evidencias/eliminar';
         
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'evidencia_id';
-        input.value = evidenciaId;
+        const inputId = document.createElement('input');
+        inputId.type = 'hidden';
+        inputId.name = 'evidencia_id';
+        inputId.value = evidenciaId;
         
-        form.appendChild(input);
+        const inputCsrf = document.createElement('input');
+        inputCsrf.type = 'hidden';
+        inputCsrf.name = '<?php echo CSRF_TOKEN_NAME; ?>';
+        inputCsrf.value = '<?php echo \App\Helpers\Security::generateCSRFToken(); ?>';
+        
+        form.appendChild(inputId);
+        form.appendChild(inputCsrf);
         document.body.appendChild(form);
         form.submit();
     }
